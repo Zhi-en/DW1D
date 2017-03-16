@@ -1,5 +1,7 @@
 # DW1D
-Digital World 1D project code files
+An SUTD Digital World 1D project
+
+Links
 
 Download for Load Cell Amp code: https://github.com/tatobari/hx711py
 
