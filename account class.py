@@ -20,7 +20,7 @@ class account(object):
     
     def withdraw(self,value):
         if value > self.balance:
-            insufficientFunds()
+            self.insufficientFunds()
             return False
         else:
             self.balance -= value
@@ -34,15 +34,17 @@ class account(object):
         self.balance += value
 
         
-    def wash(self,weight):
-        fee = calcFee(weight)
-        machineid = findMachine(weight)
-        success = withdraw(fee)
+    def wash(self,weight,fee,machineid):
+#==============================================================================
+#         fee = calcFee(weight)               #from main
+#         machineid = findMachine(weight)     #from main
+#==============================================================================
+        success = self.withdraw(fee)
         if success:              #successful withdrawal
             self.info["machineid"] = machineid
             self.info["weight"] = weight
 
-            return success,fee,machineid
+            return success
 
         
         
