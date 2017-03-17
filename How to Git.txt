@@ -1,5 +1,13 @@
+Connecting working folder to Git
+1) Either go to folder from Git bash or use windows explorer and right click Git Bash here
+2) git push set-upstream origin [branch name]
+3) git config --global user.email "you@example.com"
+4) git config --global user.name "[editor name]"
+5) git checkout [branch name]
+
+Uploading changes
 1) git add .
 2) git commit
-2.5) (optional to avoid vim) git commit -m "message here"
-3) add comments, press esc, type ":wq"
+2.5) (optional to avoid vim) git commit -m "[message here]"
+3) [add comments], press esc, type ":wq"
 4) git push
