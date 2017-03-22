@@ -3,3 +3,5 @@
 2.5) (optional to avoid vim) git commit -m "message here"
 3) add comments, press esc, type ":wq"
 4) git push
+
+mokson and co
