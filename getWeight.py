@@ -1,27 +1,34 @@
-import RPi.GPIO as GPIO
-import time
+#!/usr/bin/pythonimport
 #define these at the start of main function
+import RPi.GPIO as GPIO
 import sys
-from hx711 import HX711
+from HX711 import HX711
+from time import sleep
 dout = 5
 pdsck = 6
 
+def cleanAndExit():
+    print "Cleaning..."
+    GPIO.cleanup()
+    print "Bye!"
+    sys.exit()
 
 def getWeight():
-    offset = 1000    #max offset allowed incase there is already laundry on the scale
+    offset = 8378000    #max offset allowed incase there is already laundry on the scale
     ref = 300    #calibrated to return weight in grams
     minweight = 500    #min weight needed to prevent 0 return when user takes time to place laundry on weighing scale
-    delta = 50    #allowable difference in value range to ensure stable weight returned
+    delta = 20    #allowable difference in value range to ensure stable weight returned
     hx = HX711(dout, pdsck)
     hx.set_reading_format("LSB", "MSB")    #reading settings according to hx711 docs
     hx.set_reference_unit(ref)    #divides reading by ref, calibrated to return weight in grams
     hx.reset()    #powers down and up, online sources say it is good practice to do so often
     hx.tare()    #zeros the weighing scale
-    print hx.OFFSET
+    #print hx.OFFSET
     if hx.OFFSET >= offset:    #incase users place their laundry on the scale before it is ready to weigh
         print 'please remove all items from weighing scale'
         while hx.OFFSET >= offset:
             hx.tare()
+            #print hx.OFFSET
             hx.reset()
             sleep(0.2)
         sleep(1)    #give time for all weight to be fully removed before zeroing again
@@ -31,8 +38,9 @@ def getWeight():
     count = 0
     while True:
         weight[count] = hx.get_weight(10)
+        #print weight
         count += 1
-        if count == 4:
+        if count == 5:
             count = 0
         if sum(weight)/5 >= minweight:
             if max(weight) - min(weight) <= delta:
@@ -41,5 +49,17 @@ def getWeight():
         hx.reset()
         sleep(0.2)
 
-print getWeight()
-cleanAndExit()
+def cost(weight):    #returns cost of load for input weight
+    maxload = 10000    #the maximum load of the washing machine in g
+    fullcost = 1    #the cost of 1 wash
+    pfilled = 0.9    #at minimal how full the washing machine should be to wash
+    cost = round(weight/(pfilled*maxload)*fullcost,2)
+    return '$%f' %(cost)
+
+try:
+    weight = getWeight()
+    print weight
+    cost = cost(weight)
+    print cost
+except (KeyboardInterrupt, SystemExit):
+    cleanAndExit()
