@@ -1,0 +1,15 @@
+For all repository contributors. Before you git push, please ensure you follow the conventions below.
+
+Git/GitHub quick guide:
+    1) git add .
+    2) git commit
+        2.1) (optional to avoid vim) git commit -m "message here"
+    3) add comments, press esc, type ":wq"
+    4) git push
+
+    For more info on Git, see https://www.atlassian.com/git/tutorials/learn-git-with-bitbucket-cloud
+
+Raspberry Pi Hardware:
+    1) We are using BCM pinout. Pl
+
+    cd <> && git checkout master && git pull && python <akjsfdnkjsdf.py>
