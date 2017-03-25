@@ -39,6 +39,13 @@ def getWeight(dout, pdsck):
         sleep(0.2)
 
 
+def getCost(weight):    #returns cost of load for input weight
+    maxload = 10000    #the maximum load of the washing machine in g
+    fullcost = 1    #the cost of 1 wash
+    pfilled = 0.9    #at minimal how full the washing machine should be to wash
+    cost = round(weight/(pfilled*maxload)*fullcost,2)
+    return '$%f' %(cost)
+
 #from cleanAndExit import CleanAndExit
 #while True:
 #    try:
@@ -46,5 +53,7 @@ def getWeight(dout, pdsck):
 #        pdsck = 6
 #        weight = getWeight(dout, pdsck)
 #        print weight
+#        cost = getCost(weight)
+#        print cost
 #    except (KeyboardInterrupt, SystemExit):
 #        cleanAndExit()
