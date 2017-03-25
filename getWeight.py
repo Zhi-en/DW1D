@@ -1,19 +1,8 @@
 #!/usr/bin/pythonimport
-#define these at the start of main function
-import RPi.GPIO as GPIO
-import sys
 from HX711 import HX711
 from time import sleep
-dout = 5
-pdsck = 6
 
-def cleanAndExit():
-    print "Cleaning..."
-    GPIO.cleanup()
-    print "Bye!"
-    sys.exit()
-
-def getWeight():
+def getWeight(dout, pdsck):
     offset = 8378000    #max offset allowed incase there is already laundry on the scale
     ref = 300    #calibrated to return weight in grams
     minweight = 500    #min weight needed to prevent 0 return when user takes time to place laundry on weighing scale
@@ -49,17 +38,13 @@ def getWeight():
         hx.reset()
         sleep(0.2)
 
-def cost(weight):    #returns cost of load for input weight
-    maxload = 10000    #the maximum load of the washing machine in g
-    fullcost = 1    #the cost of 1 wash
-    pfilled = 0.9    #at minimal how full the washing machine should be to wash
-    cost = round(weight/(pfilled*maxload)*fullcost,2)
-    return '$%f' %(cost)
 
-try:
-    weight = getWeight()
-    print weight
-    cost = cost(weight)
-    print cost
-except (KeyboardInterrupt, SystemExit):
-    cleanAndExit()
+#from cleanAndExit import CleanAndExit
+#while True:
+#    try:
+#        dout = 5
+#        pdsck = 6
+#        weight = getWeight(dout, pdsck)
+#        print weight
+#    except (KeyboardInterrupt, SystemExit):
+#        cleanAndExit()
