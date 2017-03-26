@@ -38,6 +38,11 @@ def GUI_2():
         return 2
     else:
         return 3
+    
+#Function that determines which machine to put the clothes in, returns the machineID
+def findMachine(weight):
+    #code
+    return machineID
                
     
 class mainPi(sm.SM):
@@ -47,7 +52,7 @@ class mainPi(sm.SM):
     #state 2 - Private Wash
     #state 3 - Check if previous wash(es) are done
     
-    def getNextValues(self,state,inp): 
+    def getNextValues(self,state): 
         if state == 0:
             login = GUI_1() #True or False
             if login:
@@ -56,20 +61,47 @@ class mainPi(sm.SM):
                 next_state = 3 #no login detected so go check wash status
         
         elif state == 1:
+            weight = getWeight() #whats the arguments here??
+            cost = getCost(weight)
+            machineid = findMachine(weight)
+            success = currentUser.wash(weight,cost,machineID) #Updates account information, returns True or False Value (successful deduction or not)
+            if success: #sucessful deduction
+                wash() #calls wash function
+
+            else: #failed to deduct
+                currentUser.insufficientFunds()
+            
+            next_state = 0
             
             
         elif state == 2:
             weight = maxWeight
-            cost = getCost(weight) 
+            cost = getCost(weight)
+            machineid = findMachine(weight)
             success = currentUser.wash(weight,cost,machineID)
+            
+            if success: 
+                wash ()
+            else: 
+                currentUser.insufficientFunds()
+            
+            next_state = 0
             
         
         elif state == 3:
+            #checks previous washes
+            #if any are finished
+            #calls contact user function
+            
       
       
+
+activate = mainPi()
+activate.start()
             
 while (status): #status should be True until want to turn code off
-    activate = mainPi()
+    activate.step()
+    
     
     
     
