@@ -1,6 +1,54 @@
-For all repository contributors. Before you git push, please ensure you follow the conventions below.
+NOTICE: For all repository contributors. Before you git push, please ensure you follow the conventions below.
 
-Git/GitHub quick guide:
+    CODING CONVENTIONS:
+        Class names are to have capital first letter. e.g. 'class Account'
+        Functions use an underscore to separate the words in the name. e.g. 'def hot_potato(a, b, c)' (or you can use camel case if you really want)
+        Variables names are in camel case. e.g. 'coffeeCup = 0' (or you can use underscore if you really want)
+        Include the following line at the top of every python file: '#!/usr/bin/env python'. This ensures that the file can be executed from bash easily.
+        All imports are to be done at the top of the python file.
+        Try to modularise your code as much as possible. i.e. put them into smaller functions instead of writing them in a gigantic code block
+        
+    SAMPLE PYTHON FILE:
+        #!/usr/bin/env python
+
+        import numpy
+        import sys
+
+        def clean_and_exit():
+            print "Cleaning..."
+            GPIO.cleanup()
+            print "Bye!"
+            sys.exit()
+
+        def foo(a,s,d,f):
+            return a + s + d + f
+
+        def bar():
+            print 'potato' * 100
+        
+        def setup():
+            global a = 1
+            global s = 2
+            global d = 3
+            global f = 4
+
+        def main():
+            print foo(a, s, d, f)
+            bar()
+        
+        setup() #run the setup code
+        
+        try:
+            main() #run the main code
+        except KeyboardInterrupt:
+            clean_and_exit()
+    
+
+GIT/GITHUB QUICK GUIDE:
+    Initial Setup:
+        Navigate to the location you want to store a local copy of the git repository files using the cd command (go check google)
+        git clone <git clone URL>
+
     To upload to your branch, please git checkout <your branch> first.
         1) git add .
         2) git commit
@@ -15,7 +63,37 @@ Git/GitHub quick guide:
 
     For more info on Git, see https://www.atlassian.com/git/tutorials/learn-git-with-bitbucket-cloud
 
-Raspberry Pi Hardware:
-    1) We are using BCM pinout. Please ensure all pin numbers adhere to this convention.
+RASPBERRY PI:
+    Raspberry Pi Hardware:
+        1) We are using BCM pinout. Please ensure all pin numbers adhere to this convention.
+    
+    Raspberry Pi Quick Tips:
+        SSHing into the Raspberry Pi:
+            Find the IP addess of the Rasp Pi.
+            Use Putty to SSH.
+        Methods of transferring files into the Rasp Pi:
+            Git: git pull the repository into the working directory. (Requires internet access)
+            SFTP: Use Filezilla to SFTP into the working directory. (Requires the Rasp Pi to be on the same LAN, or port forwarded if access required over the internet.)
+            Dumb but foolproof if all else fails: Thumbdrive
 
-    To implement on the Raspberry Pi's rc.local: cd <> && git checkout master && git pull && python <akjsfdnkjsdf.py>
+LINUX COMMANDS:
+    Quick tip: hit the tab button to autofill.
+
+    Directory format: 
+        /home/pi is an absolute directory, i.e. from '/', go into the 'home' folder, then go into the 'pi' folder
+        however, if you want to enter a directory within your current working directory, omit the '/'.
+        e.g.    pwd
+                >>> /home/pi
+                cd Desktop
+                pwd
+                >>> /home/pi/Desktop
+    
+    sudo                    --- super user do. A prefix to give administrator(root) rights to do an action. e.g. 'sudo nano' means open a nano instance with admin rights
+    pwd                     --- see current working directory
+    cd <directory>          --- enter a directory
+    cd ..                   --- up one level
+    ls                      --- list all files and folders in the current working directory
+    nano <filename>         --- open the nano text editor
+    chmod +x <filename>     --- change the file permissions to executable.
+    ./<filename>            --- run an executable file in the bash terminal. Use hashbang (#!/usr/bin/env python) to run python files.
+    python <filename>       --- run python file
