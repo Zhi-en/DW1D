@@ -1,6 +1,8 @@
 #!/usr/bin/pythonimport
 from HX711 import HX711
 from time import sleep
+from firebase import getState
+from firebase import putState
 
 def getWeight(dout, pdsck):
     offset = 8378000    #max offset allowed incase there is already laundry on the scale
@@ -14,7 +16,7 @@ def getWeight(dout, pdsck):
     hx.tare()    #zeros the weighing scale
     #print hx.OFFSET
     if hx.OFFSET >= offset:    #incase users place their laundry on the scale before it is ready to weigh
-        print 'please remove all items from weighing scale'
+        print 'Please remove all items from weighing scale'
         while hx.OFFSET >= offset:
             hx.tare()
             #print hx.OFFSET
@@ -22,7 +24,7 @@ def getWeight(dout, pdsck):
             sleep(0.2)
         sleep(1)    #give time for all weight to be fully removed before zeroing again
         hx.tare()
-    print 'please place your laundry on weighing scale'
+    print 'Please place your laundry on the weighing scale'
     weight = [0 for i in range(5)]
     count = 0
     while True:
@@ -39,6 +41,17 @@ def getWeight(dout, pdsck):
         sleep(0.2)
 
 
+def getCost(weight, maxLoad, fullCost):    #returns cost of load for input weight
+    pfilled = 0.9    #at minimal how full the washing machine should be to wash
+    cost = round(weight/(pfilled*maxLoad)*fullCost,2)
+    if cost > fullCost:
+        cost = fullCost
+    print 'Cost is $%.2f' %(cost)
+    return cost
+
+def getMachine(weight):
+    pass
+
 #from cleanAndExit import CleanAndExit
 #while True:
 #    try:
@@ -46,5 +59,7 @@ def getWeight(dout, pdsck):
 #        pdsck = 6
 #        weight = getWeight(dout, pdsck)
 #        print weight
+#        cost = getCost(weight)
+#        print '$.2f' %(cost)
 #    except (KeyboardInterrupt, SystemExit):
 #        cleanAndExit()
