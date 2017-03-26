@@ -1,5 +1,6 @@
 #Outline of Washing Machine Pi code
-from firebase import machineState    #checks/changes the state of the machine
+from firebase import getState
+from firebase import putState
 
 machineNum = 1
 
