@@ -7,3 +7,5 @@ An SUTD Digital World 1D project
 Download for Load Cell Amp code: https://github.com/tatobari/hx711py
 
 Download for Sonar code: https://tutorials-raspberrypi.com/raspberry-pi-ultrasonic-sensor-hc-sr04/
+
+Download for Kivy GUI code: https://github.com/mrichardson23/rpi-kivy-screen.git
