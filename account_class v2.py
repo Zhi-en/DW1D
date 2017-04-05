@@ -1,3 +1,8 @@
+#Requires weight, fee, and machineid
+#weight = weight of laundry
+#fee = how much person has to pay
+#machineid = which washing machine person is assigned to
+
 
 class account(object):
     def __init__(self,name,contact,balance=0):
