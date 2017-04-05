@@ -1,22 +1,45 @@
-#Requires weight, fee, and machineid
-#weight = weight of laundry
-#fee = how much person has to pay
-#machineid = which washing machine person is assigned to
+#Requires function to tell user door is open when door is open for >= 1min
+
+import time
 
 
-class account(object):
-    def __init__(self,name,contact,balance=0):
-        self.name = name
-        self.info = {"contact":contact,"machineid":None, "time":None, "weight":None}
-        self.balance = balance
+class WashingMachine(object):
+    def __init__(self,machineid):
+        self.machineid = machineid
+        self.weight = 0
+        self.OCstate = "Closed"
+        self.PWCstate = "Pooling"
+        self.startTime = 0
+           
+    def doorOpen(self):
+        self.OCstate = "Open"
+        self.startTime = time.time()
     
-    def charge(self,value):
-        self.balance += value
+    def doorClose(self):
+        self.OCstate = "Closed"
         
-    def wash(self,weight,fee,machineid):
-        self.charge(fee)
-        self.info["machineid"] = machineid
-        self.info["weight"] = weight
+    def startWash(self):
+        self.PWCstate = "Wash"
+    
+    def endWash(self):
+        self.PWCstate = "Collect"
+    
+    def addWeight(self,weight):
+        self.weight += weight
+    
+    def minusWeight(self,weight):
+        self.weight -= weight
+        if self.weight<=0:
+            self.weight = 0
+            self.PWCstate = "Pooling"
+        
+    def DoorTime(self):
+        currentTime - time.time()
+        if currentTime - startTime > 60 and self.OCstate == "Open":
+            #door is open function
+            pass
+        
+        
 
         
         
