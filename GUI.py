@@ -59,7 +59,8 @@ def getCost():
     global globalWeight
     global globalCost
     cost = globalWeight/(0.9*maxLoad)*fullCost
-    globalCost = cost
+    globalCost = round(cost,2)
+    print globalCost, cost
 
 def getMachine():
     global globalWeight
@@ -184,34 +185,34 @@ class WeighScreen(Screen):
         super(WeighScreen, self).__init__(**kwargs)
         self.layout=FloatLayout()
         self.add_widget(self.layout)
-        self.weightl=Label(text='',font_size=40,pos_hint={'center_x':0.5,'center_y':0.75})
+        self.weightl=Label(text='',font_size=40,pos_hint={'center_x':0.5,'center_y':0.75}) #Label displays weight/instructions for user
         self.layout.add_widget(self.weightl)
-        self.tareb=Button(text='Tare',pos_hint={'center_x':0.25,'center_y':0.25},size_hint=(0.2,0.1),on_press=self.tare)
+        self.tareb=Button(text='Tare',pos_hint={'center_x':0.25,'center_y':0.25},size_hint=(0.2,0.1),on_press=self.tare) #Button to zero the machine (tare)
         self.layout.add_widget(self.tareb)
-        self.weighb=Button(text='Weigh',pos_hint={'center_x':0.5,'center_y':0.25},size_hint=(0.2,0.1),on_press=self.weigh,disabled=True)
+        self.weighb=Button(text='Weigh',pos_hint={'center_x':0.5,'center_y':0.25},size_hint=(0.2,0.1),on_press=self.weigh,disabled=True) #Button to get the weight of items on weighing scale, only activated after weighing scale is zeroed
         self.layout.add_widget(self.weighb)
-        self.proceedb=Button(text='Proceed',pos_hint={'center_x':0.75,'center_y':0.25},size_hint=(0.2,0.1),on_press=self.proceed,disabled=True)
+        self.proceedb=Button(text='Proceed',pos_hint={'center_x':0.75,'center_y':0.25},size_hint=(0.2,0.1),on_press=self.proceed,disabled=True) #Button to continue to next screen, only activated there is a weight measured
         self.layout.add_widget(self.proceedb)
         self.homeb=HomeButton(on_press=self.home)
         self.layout.add_widget(self.homeb)
         self.backb=BackButton(on_press=self.back)
         self.layout.add_widget(self.backb)
-    def tare(self,instance):
+    def tare(self,instance): #function that calls the zeroing of weighing scale
         global startWeigh
         startWeigh()
-        self.weightl.text=str(globalWeight)
+        self.weightl.text=str(globalWeight) #changed the display label
         if globalWeight=='Proceed to weigh':
-            self.weighb.disabled=False
-    def weigh(self,instance):
+            self.weighb.disabled=False #enables weigh button when weighing scale is zeroed properly
+    def weigh(self,instance): #function that gets the weight on weighing scale
         global getWeigh
         getWeight()
-        self.weightl.text=str(globalWeight)
-        self.proceedb.disabled=False
-    def proceed(self,instance):
+        self.weightl.text=str(globalWeight) #changes the display label
+        self.proceedb.disabled=False #enables proceed button once weight is obtained
+    def proceed(self,instance): #function that proceeds to next screen after updating the global variables
         global getCost
-        getCost()
+        getCost() #updates global variable globalCost based on new weight
         global getMachine
-        getMachine()
+        getMachine() #updates global variable globalMachine based on weight and optimising washing machine space usage
         self.manager.current='washlogin'
     def home(self,instance):
         self.manager.current='welcome'
@@ -223,13 +224,13 @@ class WashLoginScreen(Screen):
         super(WashLoginScreen, self).__init__(**kwargs)
         self.layout=FloatLayout()
         self.add_widget(self.layout)
-        self.costl=Label(text='$%d'%(globalCost),font_size=30,pos_hint={'center_x':0.5,'center_y':0.85})
+        self.costl=Label(text='$%d'%(globalCost),font_size=30,pos_hint={'center_x':0.5,'center_y':0.85}) #Label that displays costs to be paid
         self.layout.add_widget(self.costl)
-        self.fail=Label(text='Incorrect User ID or Password',font_size=20,color=(1,0,0,1),pos_hint={'center_x':0.5,'center_y':0.7},disabled=True)
+        self.fail=Label(text='Incorrect User ID or Password',font_size=20,color=(1,0,0,1),pos_hint={'center_x':0.5,'center_y':0.7},disabled=True) #Label that appears when wrong userid/password is input
         self.layout.add_widget(self.fail)
         self.ul=Label(text='User ID',pos_hint={'center_x':0.25,'center_y':0.525})
         self.layout.add_widget(self.ul)
-        self.ut=TextInput(pos_hint={'center_x':0.75,'center_y':0.525},size_hint=(0.5,0.05),multiline=False,write_tab=False,on_text_validate=self.login)
+        self.ut=TextInput(pos_hint={'center_x':0.75,'center_y':0.525},size_hint=(0.5,0.05),multiline=False,write_tab=False,on_text_validate=self.login) #write_tab and on_text_validate enable use of tab to go to next text field and enter to return a function
         self.ut.focus=True
         self.layout.add_widget(self.ut)
         self.pl=Label(text='Password',pos_hint={'center_x':0.25,'center_y':0.475})
@@ -250,7 +251,7 @@ class WashLoginScreen(Screen):
 #            putWeight(globalWeight,id)
 #            OpenMachine()
 #            UpdateMachineWeight()
-            self.ut.text=''
+            self.ut.text=''#resets the screen to original
             self.pt.text=''
             self.fail.disabled=True
             self.manager.current='wash'
@@ -268,7 +269,7 @@ class WashScreen(Screen):
         super(WashScreen, self).__init__(**kwargs)
         self.layout=FloatLayout()
         self.add_widget(self.layout)
-        self.wash=Label(text='Please place your laundry in Washing Machine ')
+        self.wash=Label(text='Please place your laundry in Washing Machine %d' %(globalMachine)) #tells user which washing machine to place laundry in
         self.homeb=HomeButton(on_press=self.home)
         self.layout.add_widget(self.homeb)
     def home(self,instance):
@@ -325,7 +326,7 @@ class CollectScreen(Screen):
         self.layout=FloatLayout()
         self.add_widget(self.layout)
         global globalMachine
-        self.collect=Label(text='Please collect your laundry from Washing Machine %d' %(globalMachine))
+        self.collect=Label(text='Please collect your laundry from Washing Machine %d' %(globalMachine)) #tells user which washing machine to take laundry from
         self.homeb=HomeButton(on_press=self.home)
         self.layout.add_widget(self.homeb)
         self.backb=BackButton(on_press=self.back,disabled=True)
@@ -341,7 +342,7 @@ class CloseDoorScreen(Screen):
         self.layout=FloatLayout()
         self.add_widget(self.layout)
         global globalMachine
-        self.close=Label(text='Please close the door of Washing Machine %d' %(globalMachine))
+        self.close=Label(text='Please close the door of Washing Machine %d' %(globalMachine)) #tells user to close an open laundry door if any door is left open
         self.layout.add_widget(self.close)
         self.homeb=HomeButton(on_press=self.home)
         self.layout.add_widget(self.homeb)
