@@ -45,24 +45,24 @@ globalCost = 0
 globalMachine = 0
 
 #placeholder functions
-def startWeigh():
-    instr = raw_input('Proceed to weigh/Clear the weighing scale: ')
+def startWeigh(): #Tares the load cell
+    instr = raw_input('Proceed to weigh/Clear the weighing scale: ') #REPLACE WITH ACTUAL WEIGHT CODE
     global globalWeight
     globalWeight = instr
 
-def getWeight():
-    weight = float(raw_input('weight/kg:'))
+def getWeight(): #gets the weight of clothes
+    weight = float(raw_input('weight/kg:')) #replace with actual weight code
     global globalWeight
     globalWeight = weight
 
-def getCost():
+def getCost(): #calculates the amount for the customer to pay
     global globalWeight
     global globalCost
     cost = globalWeight/(0.9*maxLoad)*fullCost
     globalCost = round(cost,2)
     print globalCost, cost
 
-def getMachine():
+def getMachine(): #chooses the correct machine
     global globalWeight
     global globalMachine
     if globalWeight > 9:
@@ -72,19 +72,20 @@ def getMachine():
     else:
         globalMachine = 3
 
-def verify(userID,password):
+def verify(userID,password): #verifys the authenticity of the customer and charges to his account
     if userID == 'pi' and password == 'Sutd1234':
         return True
     else:
         return False
 
-def doorOpen():
+def doorOpen(): #checks if the door is open
     if time.time()-startTime > 120:
         return True, 1
     else:
         return False, 0
 
-#Kivy shared GUI classes
+#Kivy custom widgets, standardise look across app
+#Buttons:
 class HomeButton(Button):
     def __init__(self,**kwargs):
         Button.__init__(self,**kwargs)
@@ -121,26 +122,32 @@ class RightButton(Button):
 class WelcomeScreen(Screen):
     def __init__(self, **kwargs):
         super(WelcomeScreen, self).__init__(**kwargs)
-        Clock.schedule_interval(self.closeDoor, 10)
-        self.layout=FloatLayout(on_touch_down=self.next)
+        Clock.schedule_interval(self.closeDoor, 10) #checks every 10 seconds if any washing machine door is open
+        self.layout=FloatLayout(on_touch_down=self.next) #touch screen to go to wash or collect screen
         self.add_widget(self.layout)
+
+        #add items to the layout
         self.ml=Label(text='Welcome to Laundry Pool',font_size=50,color=(0,1,0,1))
         self.layout.add_widget(self.ml)
         self.sl=Label(text='click anywhere on screen to continue',font_size=20,color=(1,0,0,1),pos_hint={'center_x':0.5,'top':0.7})
         self.layout.add_widget(self.sl)
-    def next(self, instance, value):
-        self.manager.current='washorcollect'
-    def closeDoor(self, instance):
+
+    def next(self, instance, value): #function to go to next screen
+        self.manager.current = 'washorcollect'
+
+    def closeDoor(self, instance): #checks if all doors are closed. if not, go to the close door screen
         if doorOpen()[0]:
             global globalMachine
             globalMachine = doorOpen()[1]
             self.manager.current='closedoor'
 
-class WashOrCollectScreen(Screen):
+class WashOrCollectScreen(Screen): #prompt the user whether he/she wants to wash or collect
     def __init__(self, **kwargs):
-        super(WashOrCollectScreen, self).__init__(**kwargs)
-        self.layout=FloatLayout()
+        super(WashOrCollectScreen, self).__init__(**kwargs) #initialise the attributes of the parent class
+        self.layout=FloatLayout() #set layout
         self.add_widget(self.layout)
+
+        #add items to the layout
         self.lb=LeftButton(text='Wash',on_press=self.wash)
         self.layout.add_widget(self.lb)
         self.rb=RightButton(text='Collect',on_press=self.collect)
@@ -149,20 +156,26 @@ class WashOrCollectScreen(Screen):
         self.layout.add_widget(self.homeb)
         self.backb=BackButton(on_press=self.back)
         self.layout.add_widget(self.backb)
+
     def wash(self,instance):
         self.manager.current='poolorprivate'
+
     def collect(self,instance):
         self.manager.current='collectlogin'
+
     def home(self,instance):
         self.manager.current='welcome'
+
     def back(self,instance):
         self.manager.current='welcome'
 
 class PoolOrPrivateScreen(Screen):
     def __init__(self, **kwargs):
-        super(PoolOrPrivateScreen, self).__init__(**kwargs)
-        self.layout=FloatLayout()
+        super(PoolOrPrivateScreen, self).__init__(**kwargs) #initialise the attributes of the parent class
+        self.layout=FloatLayout() #set layout
         self.add_widget(self.layout)
+
+        #add items to the layout
         self.lb=LeftButton(text='Pool',on_press=self.pool)
         self.layout.add_widget(self.lb)
         self.rb=RightButton(text='Private',on_press=self.private)
@@ -171,14 +184,19 @@ class PoolOrPrivateScreen(Screen):
         self.layout.add_widget(self.homeb)
         self.backb=BackButton(on_press=self.back)
         self.layout.add_widget(self.backb)
+
     def pool(self,instance):
         self.manager.current='weigh'
+
     def private(self,instance):
         self.manager.current='washlogin'
+
     def home(self,instance):
         self.manager.current='welcome'
+
     def back(self,instance):
         self.manager.current='washorcollect'
+
 
 class WeighScreen(Screen):
     def __init__(self, **kwargs):
