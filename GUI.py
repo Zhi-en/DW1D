@@ -3,7 +3,9 @@
 import time
 
 ##import 1D functions
-#from weigh import getWeight, getCost, getMachine    #gets weight of laundry, cost of wash and optimal washing machine to use, automatically updates washing machine weight data
+#from weigh import weighingScale
+#ws = weighingScale()
+from weigh import getCost, getMachine    #gets weight of laundry, cost of wash and optimal washing machine to use, automatically updates washing machine weight data
 #from soap import giveSoap    #dispenses soap when cup is detected
 #from firebase import getData    #gets machineNum, weight from firebase in the form (userid)
 #from firebase import putData    #puts data on firebase in the form (userid, contact = str, machineNum = int, weight = int)
@@ -44,16 +46,14 @@ globalWeight = 0
 globalCost = 0
 globalMachine = 0
 
-#placeholder functions
-def startWeigh(): #Tares the load cell
-    instr = raw_input('Proceed to weigh/Clear the weighing scale: ') #REPLACE WITH ACTUAL WEIGHT CODE
-    global globalWeight
-    globalWeight = instr
-    
-def getWeight(): #gets the weight of clothes
-    weight = float(raw_input('weight/kg:')) #replace with actual weight code
-    global globalWeight
-    globalWeight = weight
+#placeholder functions TO BE REPLACED WITH ACTUAL CODE
+class ws(object):
+    def tareScale(): #Tares the load cell
+        instr = raw_input('Proceed to weigh/Clear the weighing scale: ')
+        return instr
+    def getWeight(): #gets the weight of clothes
+        weight = float(raw_input('weight/kg:')) #replace with actual weight code
+        return weight
 
 def getCost(): #calculates the amount for the customer to pay
     global globalWeight
@@ -213,23 +213,32 @@ class WeighScreen(Screen):
         self.backb=BackButton(on_press=self.back)
         self.layout.add_widget(self.backb)
     def on_pre_enter(self):
-        startWeigh()
-        self.weightl.text=str(globalWeight)
+        self.weightl.text=str(ws.tareScale())
         Clock.schedule_interval(self.weigh,5)
     def on_pre_leave(self):
         Clock.unschedule(self.weigh)
-#        stopWeigh()
     def on_leave(self):
         self.weightl.text=''
         self.proceedb.disabled=True
     def weigh(self,instance):
-        if globalWeight == 'Clear the weighing scale':
-            startWeigh()
+        if self.weightl.text=='Please remove all items from weighing scale':
+            self.weightl.text=str(ws.tareScale())
+        elif self.weightl.text=='Please place laundry on the weighing scale':
+            self.weightl.text=ws.getWeight()
         else:
-            getWeight()
-            self.proceedb.disabled=False
-        self.weightl.text='Laundry weight is %.2fkg' %(globalWeight)
-    def proceed(self,instance): #function that proceeds to next screen after updating the global variables
+            delta=100    #allowable difference in value range to ensure stable weight returned
+            weight=[0 for i in range(5)]
+            count=0
+            weight[count]=self.weightl.text
+            self.weightl.text=ws.getWeight()
+            count+=1
+            if count==5:
+                count=0
+            if max(weight)-min(weight)<=delta:
+                global globalWeight
+                globalWeight = sum(weight)/5
+                self.proceedb.disabled=False
+    def proceed(self,instance):
         self.manager.current='washlogin'
     def home(self,instance):
         self.manager.current='welcome'
@@ -261,8 +270,10 @@ class WashLoginScreen(Screen):
         self.backb=BackButton(on_press=self.back)
         self.layout.add_widget(self.backb)
     def on_pre_enter(self):
-        getCost()
-        getMachine()
+        global globalCost
+        global globalMachine
+        globalCost = getCost()
+        globalMachine = getMachine()
         self.costl.text='Cost is $%.2f' %(globalCost)
     def on_pre_leave(self):
         #add in all firebase functions here
