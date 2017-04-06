@@ -38,28 +38,38 @@ from kivy.clock import Clock
 #GPIO.setup(motor, GPIO.OUT)
 #
 ##set global variables
-#maxLoad = 10000    #maximum laundry load of washing machine in g
-#fullCost = 1.0    #cost of one wash in $
-
+maxLoad = 10   #maximum laundry load of washing machine in g
+fullCost = 1.0    #cost of one wash in $
+globalWeight = 0
+globalCost = 0
+globalMachine = 0
 
 #placeholder functions
 def startWeigh():
-    instr = raw_input('Please place your laundry on the weighing scale/Please remove all items from weighing scale')
+    instr = raw_input('Proceed to weigh/Clear the weighing scale: ')
     global globalWeight
-    if instr = 'Please place your laundry on the weighing scale':
-        globalWeight = 0, instr
-    elif instr = 'Please remove all items from weighing scale':
-        globalWeight = -1, instr
+    globalWeight = instr
 
 def getWeight():
-    instr = raw_input('stabalised?(y/n)')
-    weight = raw_input('weight:')
-    if instr = 'y':
-        instr = 1
-    elif instr = 'n':
-        instr = 0
+    weight = float(raw_input('weight/kg:'))
     global globalWeight
-    globalWeight = instr, weight
+    globalWeight = weight
+
+def getCost():
+    global globalWeight
+    global globalCost
+    cost = globalWeight/(0.9*maxLoad)*fullCost
+    globalCost = cost
+
+def getMachine():
+    global globalWeight
+    global globalMachine
+    if globalWeight > 9:
+        globalMachine = 1
+    elif globalWeight > 6:
+        globalMachine = 2
+    else:
+        globalMachine = 3
 
 def verify(userID,password):
     if userID == 'pi' and password == 'Sutd1234':
@@ -161,7 +171,6 @@ class PoolOrPrivateScreen(Screen):
         self.backb=BackButton(on_press=self.back)
         self.layout.add_widget(self.backb)
     def pool(self,instance):
-        startWeigh()
         self.manager.current='weigh'
     def private(self,instance):
         self.manager.current='washlogin'
@@ -173,23 +182,37 @@ class PoolOrPrivateScreen(Screen):
 class WeighScreen(Screen):
     def __init__(self, **kwargs):
         super(WeighScreen, self).__init__(**kwargs)
-        Clock.schedule_interval(self.weigh,1)
         self.layout=FloatLayout()
         self.add_widget(self.layout)
-        self.weightl=Label(text='',font_size=40,pos_hint={'center_x':0.5,'center_y':0.75},)
+        self.weightl=Label(text='',font_size=40,pos_hint={'center_x':0.5,'center_y':0.75})
         self.layout.add_widget(self.weightl)
-        self.proceed=Button(text='Proceed',pos_hint={'center_x':0.5,'center_y':0.25},size_hint=(0.3,0.2))
+        self.tareb=Button(text='Tare',pos_hint={'center_x':0.25,'center_y':0.25},size_hint=(0.2,0.1),on_press=self.tare)
+        self.layout.add_widget(self.tareb)
+        self.weighb=Button(text='Weigh',pos_hint={'center_x':0.5,'center_y':0.25},size_hint=(0.2,0.1),on_press=self.weigh,disabled=True)
+        self.layout.add_widget(self.weighb)
+        self.proceedb=Button(text='Proceed',pos_hint={'center_x':0.75,'center_y':0.25},size_hint=(0.2,0.1),on_press=self.proceed,disabled=True)
+        self.layout.add_widget(self.proceedb)
         self.homeb=HomeButton(on_press=self.home)
         self.layout.add_widget(self.homeb)
         self.backb=BackButton(on_press=self.back)
         self.layout.add_widget(self.backb)
-#    def weigh(self,instance):        #instead of generator can try using 2 functions: startWeigh and getWeight
-#        global globalWeight
-#        self.weightl.text=globalWeight[1]
-#        if globalWeight[0]:
-#            self.layout.add_widget(self.proceed)
-#        else:
-#            self.layout.remove_widget(self.proceed)
+    def tare(self,instance):
+        global startWeigh
+        startWeigh()
+        self.weightl.text=str(globalWeight)
+        if globalWeight=='Proceed to weigh':
+            self.weighb.disabled=False
+    def weigh(self,instance):
+        global getWeigh
+        getWeight()
+        self.weightl.text=str(globalWeight)
+        self.proceedb.disabled=False
+    def proceed(self,instance):
+        global getCost
+        getCost()
+        global getMachine
+        getMachine()
+        self.manager.current='washlogin'
     def home(self,instance):
         self.manager.current='welcome'
     def back(self,instance):
@@ -200,7 +223,10 @@ class WashLoginScreen(Screen):
         super(WashLoginScreen, self).__init__(**kwargs)
         self.layout=FloatLayout()
         self.add_widget(self.layout)
-        self.fail=Label(text='Incorrect User ID or Password',font_size=20,color=(1,0,0,1),pos_hint={'center_x':0.5,'center_y':0.8},disabled=True,opacity=0)
+        self.costl=Label(text='$%d'%(globalCost),font_size=30,pos_hint={'center_x':0.5,'center_y':0.85})
+        self.layout.add_widget(self.costl)
+        self.fail=Label(text='Incorrect User ID or Password',font_size=20,color=(1,0,0,1),pos_hint={'center_x':0.5,'center_y':0.7},disabled=True)
+        self.layout.add_widget(self.fail)
         self.ul=Label(text='User ID',pos_hint={'center_x':0.25,'center_y':0.525})
         self.layout.add_widget(self.ul)
         self.ut=TextInput(pos_hint={'center_x':0.75,'center_y':0.525},size_hint=(0.5,0.05),multiline=False,write_tab=False,on_text_validate=self.login)
@@ -222,24 +248,16 @@ class WashLoginScreen(Screen):
             global globalCost
             global globalMachine
 #            putWeight(globalWeight,id)
-#            getCost()
-#            getMachine()
 #            OpenMachine()
 #            UpdateMachineWeight()
             self.ut.text=''
             self.pt.text=''
-            try:
-                self.layout.remove_widget(self.fail)
-            except:
-                pass
+            self.fail.disabled=True
             self.manager.current='wash'
         else:
             self.ut.text=''
             self.pt.text=''
-            try:
-                self.layout.add_widget(self.fail)
-            except:
-                pass
+            self.fail.disabled=False
     def home(self,instance):
         self.manager.current='welcome'
     def back(self,instance):
@@ -262,6 +280,7 @@ class CollectLoginScreen(Screen):
         self.layout=FloatLayout()
         self.add_widget(self.layout)
         self.fail=Label(text='Incorrect User ID or Password',font_size=20,color=(1,0,0,1),pos_hint={'center_x':0.5,'center_y':0.8},disabled=True)
+        self.layout.add_widget(self.fail)
         self.ul=Label(text='User ID',pos_hint={'center_x':0.25,'center_y':0.525})
         self.layout.add_widget(self.ul)
         self.ut=TextInput(pos_hint={'center_x':0.75,'center_y':0.525},size_hint=(0.5,0.05),multiline=False,write_tab=False,on_text_validate=self.login)
@@ -289,18 +308,12 @@ class CollectLoginScreen(Screen):
 #            UpdateMachineWeight()
             self.ut.text=''
             self.pt.text=''
-            try:
-                self.layout.remove_widget(self.fail)
-            except:
-                pass
+            self.fail.disabled=True
             self.manager.current='collect'
         else:
             self.ut.text=''
             self.pt.text=''
-            try:
-                self.layout.add_widget(self.fail)
-            except:
-                pass
+            self.fail.disabled=False
     def home(self,instance):
         self.manager.current='welcome'
     def back(self,instance):
@@ -364,11 +377,5 @@ class SwitchScreenApp(App):
 
 if __name__== '__main__':
     global startTime
-    global globalWeight
-    global globalCost
-    global globalMachine
     startTime = time.time()
-    globalWeight = (False, 0)
-    globalCost = 0
-    globalMachine = 0
     SwitchScreenApp().run()
