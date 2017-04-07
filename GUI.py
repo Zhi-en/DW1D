@@ -39,39 +39,37 @@ from kivy.clock import Clock
 #GPIO.setup(sonar, GPIO.IN)
 #GPIO.setup(motor, GPIO.OUT)
 
-#set global variables
+#fixed global variables
 maxLoad = 10   #maximum laundry load of washing machine in kg
 fullCost = 1.0    #cost of one wash in $
+
+#variable global variables
 globalWeight = 0
 globalCost = 0
 globalMachine = 0
 
 #placeholder functions TO BE REPLACED WITH ACTUAL CODE
-class ws(object):
-    def tareScale(): #Tares the load cell
-        instr = raw_input('Proceed to weigh/Clear the weighing scale: ')
-        return instr
-    def getWeight(): #gets the weight of clothes
-        weight = float(raw_input('weight/kg:')) #replace with actual weight code
+class weighingScale(object):
+    def tareScale(self): #Tares the load cell
+        instr = raw_input('proceed? y/n: ')
+        if instr == 'n':
+            return 'Please remove all items from weighing scale'
+        elif instr == 'y':
+            return 'Please place laundry on the weighing scale'
+    def getWeight(self): #gets the weight of clothes
+        weight = ((startTime-time.time())/60)%10 #replace with actual weight code
         return weight
 
-def getCost(): #calculates the amount for the customer to pay
-    global globalWeight
-    global globalCost
-    cost = globalWeight/(0.9*maxLoad)*fullCost
-    if cost > fullCost:
-        cost = fullCost
-    globalCost = round(cost,2)
+ws = weighingScale()
 
 def getMachine(): #chooses the correct machine
-    global globalWeight
     global globalMachine
     if globalWeight > 9:
-        globalMachine = 1
+        return 1
     elif globalWeight > 6:
-        globalMachine = 2
+        return 2
     else:
-        globalMachine = 3
+        return 3
 
 def verify(userID,password): #verifys the authenticity of the customer and charges to his account
     if userID == 'pi' and password == 'Sutd1234':
@@ -214,7 +212,8 @@ class WeighScreen(Screen):
         self.layout.add_widget(self.backb)
     def on_pre_enter(self):
         self.weightl.text=str(ws.tareScale())
-        Clock.schedule_interval(self.weigh,5)
+    def on_enter(self):
+        Clock.schedule_interval(self.weigh,0.1)
     def on_pre_leave(self):
         Clock.unschedule(self.weigh)
     def on_leave(self):
@@ -224,25 +223,34 @@ class WeighScreen(Screen):
         if self.weightl.text=='Please remove all items from weighing scale':
             self.weightl.text=str(ws.tareScale())
         elif self.weightl.text=='Please place laundry on the weighing scale':
-            self.weightl.text=ws.getWeight()
+            weight = ws.getWeight()
+            if type(weight) is float:
+                self.weightl.text='Weight: %.2fkg'%(weight)
+            else:
+                self.weightl.text=str(weight)
         else:
-            delta=100    #allowable difference in value range to ensure stable weight returned
-            weight=[0 for i in range(5)]
-            count=0
-            weight[count]=self.weightl.text
-            self.weightl.text=ws.getWeight()
-            count+=1
-            if count==5:
+            weight=ws.getWeight()
+            if type(weight) is float:
+                delta=100    #allowable difference in value range to ensure stable weight returned
+                weightls=[0 for i in range(5)]
                 count=0
-            if max(weight)-min(weight)<=delta:
-                global globalWeight
-                globalWeight = sum(weight)/5
-                self.proceedb.disabled=False
+                weightls[count]=weight
+                self.weightl.text='Weight: %.2fkg'%(weightls[count])
+                count+=1
+                if count==5:
+                    count=0
+                if max(weightls)-min(weightls)<=delta:
+                    global globalWeight
+                    globalWeight = weight
+                    self.proceedb.disabled=False
+            else:
+                self.weightl.text=str(weight)
     def proceed(self,instance):
         self.manager.current='washlogin'
     def home(self,instance):
         self.manager.current='welcome'
     def back(self,instance):
+        resetVar()
         self.manager.current='poolorprivate'
 
 class WashLoginScreen(Screen):
@@ -272,7 +280,7 @@ class WashLoginScreen(Screen):
     def on_pre_enter(self):
         global globalCost
         global globalMachine
-        globalCost = getCost()
+        globalCost = getCost(globalWeight,maxLoad,fullCost)
         globalMachine = getMachine()
         self.costl.text='Cost is $%.2f' %(globalCost)
     def on_pre_leave(self):
@@ -333,19 +341,15 @@ class CollectLoginScreen(Screen):
         self.layout.add_widget(self.homeb)
         self.backb=BackButton(on_press=self.back)
         self.layout.add_widget(self.backb)
+    def on_pre_leave(self):
+        #get the washing machine number here and update the washing machine state(open and minus from weight)
+        pass
+    def on_leave(self):
+        self.ut.text=''
+        self.pt.text=''
+        self.fail.disabled=True
     def login(self,instance):
-        if verify(self.ut.text, self.pt.text):    ######################################################################
-            global globalWeight
-            global globalCost
-            global globalMachine
-#            putWeight(global weight)
-#            getCost()
-#            getMachine()
-#            OpenMachine()
-#            UpdateMachineWeight()
-            self.ut.text=''
-            self.pt.text=''
-            self.fail.disabled=True
+        if verify(self.ut.text, self.pt.text):
             self.manager.current='collect'
         else:
             self.ut.text=''
@@ -362,11 +366,16 @@ class CollectScreen(Screen):
         self.layout=FloatLayout()
         self.add_widget(self.layout)
         global globalMachine
-        self.collect=Label(text='Please collect your laundry from Washing Machine %d' %(globalMachine)) #tells user which washing machine to take laundry from
+        self.collect=Label(text='',font_size=20) #tells user which washing machine to take laundry from
+        self.layout.add_widget(self.collect)
         self.homeb=HomeButton(on_press=self.home)
         self.layout.add_widget(self.homeb)
         self.backb=BackButton(on_press=self.back,disabled=True)
         self.layout.add_widget(self.backb)
+    def on_pre_enter(self):
+        self.collect.text='Please collect your laundry from Washing Machine %d' %(globalMachine)
+    def on_leave(self):
+        self.collect.text=''
     def home(self,instance):
         self.manager.current='welcome'
     def back(self,instance):
@@ -378,10 +387,14 @@ class CloseDoorScreen(Screen):
         self.layout=FloatLayout()
         self.add_widget(self.layout)
         global globalMachine
-        self.close=Label(text='Please close the door of Washing Machine %d' %(globalMachine)) #tells user to close an open laundry door if any door is left open
+        self.close=Label(text='',font_size=20) #tells user to close an open laundry door if any door is left open
         self.layout.add_widget(self.close)
         self.homeb=HomeButton(on_press=self.home)
         self.layout.add_widget(self.homeb)
+    def on_pre_enter(self):
+        self.close.text='Please close the door of Washing Machine %d'%(globalMachine)
+    def on_leave(self):
+        self.close.text=''
     def home(self,instance):
         global startTime
         startTime = time.time()
