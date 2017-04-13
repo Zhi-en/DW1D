@@ -1,10 +1,9 @@
-##import raspi/python functions
-#import RPi.GPIO as GPIO
+#import raspi/python functions
+import RPi.GPIO as GPIO
 import time
 
-##import 1D functions
-#from weigh import weighingScale
-#ws = weighingScale()
+#import 1D functions
+from weigh import weighingScale
 from weigh import getCost, getMachine    #gets weight of laundry, cost of wash and optimal washing machine to use, automatically updates washing machine weight data
 #from soap import giveSoap    #dispenses soap when cup is detected
 #from firebase import getData    #gets machineNum, weight from firebase in the form (userid)
@@ -28,20 +27,19 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.textinput import TextInput
 from kivy.clock import Clock
 
-##set GPIO pins
-#GPIO.setmode(GPIO.BCM)
-#dout = 5
-#pdsck = 6
-#sonar = 0 #change
-#motor = 0 #change
-#GPIO.setup(dout, GPIO.IN)
-#GPIO.setup(pdsck, GPIO.OUT)
-#GPIO.setup(sonar, GPIO.IN)
-#GPIO.setup(motor, GPIO.OUT)
+#set GPIO pins
+GPIO.setmode(GPIO.BCM)
+dout = 5
+pdsck = 6
+sonar = 0 #change
+motor = 0 #change
+GPIO.setup(sonar, GPIO.IN)
+GPIO.setup(motor, GPIO.OUT)
 
-#fixed global variables
+#fixed global variables/objects
 maxLoad = 10   #maximum laundry load of washing machine in kg
 fullCost = 1.0    #cost of one wash in $
+ws = weighingScale(dout, pdsck)
 
 #variable global variables
 globalWeight = 0
@@ -49,18 +47,17 @@ globalCost = 0
 globalMachine = 0
 
 #placeholder functions TO BE REPLACED WITH ACTUAL CODE
-class weighingScale(object):
-    def tareScale(self): #Tares the load cell
-        instr = raw_input('proceed? y/n: ')
-        if instr == 'n':
-            return 'Please remove all items from weighing scale'
-        elif instr == 'y':
-            return 'Please place laundry on the weighing scale'
-    def getWeight(self): #gets the weight of clothes
-        weight = ((startTime-time.time())/60)%10 #replace with actual weight code
-        return weight
-
-ws = weighingScale()
+#class weighingScale(object):
+#    def tareScale(self): #Tares the load cell
+#        instr = raw_input('proceed? y/n: ')
+#        if instr == 'n':
+#            return 'Please remove all items from weighing scale'
+#        elif instr == 'y':
+#            return 'Please place laundry on the weighing scale'
+#    def getWeight(self): #gets the weight of clothes
+#        weight = ((startTime-time.time())/60)%10 #replace with actual weight code
+#        return weight
+#ws = weighingScale()
 
 def getMachine(): #chooses the correct machine
     global globalMachine
@@ -78,10 +75,7 @@ def verify(userID,password): #verifys the authenticity of the customer and charg
         return False
 
 def doorOpen(): #checks if the door is open
-    if time.time()-startTime > 120:
-        return True, 1
-    else:
-        return False, 0
+    pass
 
 #Kivy custom widgets/functions, standardise look across app
 def resetVar():
@@ -426,6 +420,5 @@ class SwitchScreenApp(App):
             return sm
 
 if __name__== '__main__':
-    global startTime
     startTime = time.time()
     SwitchScreenApp().run()
