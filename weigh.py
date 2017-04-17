@@ -35,8 +35,7 @@ class weighingScale(object):
         self.hx.power_down()
 
 
-def getCost(weight, maxLoad, fullCost):    #returns cost of load for input weight
-    pfilled = 0.9    #at minimal how full the washing machine should be to wash
+def getCost(weight, maxLoad, fullCost, pfilled):    #returns cost of load for input weight
     cost = round(weight/(pfilled*maxLoad)*fullCost,2)
     if cost > fullCost:
         cost = fullCost

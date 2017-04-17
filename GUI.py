@@ -6,8 +6,8 @@ import time
 #from weigh import weighingScale
 from weigh import getCost
 #from soap import giveSoap    #dispenses soap when cup is detected
-#from account import createUser, getUsers, verify, putData, getData
-from database import putState, getState, getDoor, getMachine, initMachines
+from account import createUser, getUsers, verify, putData, getData
+from database import initMachines, clearMachines, putState, getState, getMachine, getDoor, getWash
 
 #import kivy functions
 from kivy.app import App
@@ -32,8 +32,11 @@ from kivy.clock import Clock
 #GPIO.setup(motor, GPIO.OUT)
 
 #fixed global variables/objects
+numOfMachines = 3
+timeOut = 2*60
 maxLoad = 10   #maximum laundry load of washing machine in kg
 fullCost = 1.0    #cost of one wash in $
+pfilled = 0.9    #approximately how full the washing machine should be to wash, also used for calculating cost
 #ws = weighingScale(dout, pdsck, maxLoad)
 
 #variable global variables
@@ -132,15 +135,17 @@ class WelcomeScreen(Screen):
         self.layout.add_widget(self.sl)
     def on_pre_enter(self):
         resetVar()
-        Clock.schedule_interval(self.closeDoor, 10)
+        Clock.schedule_interval(self.checks, 10)
     def on_pre_leave(self):
-        Clock.unschedule(self.closeDoor)
+        Clock.unschedule(self.checks)
     def nextscreen(self, instance, value): #function to go to next screen
         self.manager.current = 'washorcollect'
-    def closeDoor(self, instance): #checks if all doors are closed. if not, go to the close door screen
-        if getDoor() != None:
+    def checks(self,instance): #checks if all doors are closed (if not, go to the close door screen) and pooling time does not exceed timeOut
+        if getWash(timeOut)!=None:
+            putState(getWash(timeOut),state=-1)
+        if getDoor()!=None:
             global globalMachine
-            globalMachine = getDoor()
+            globalMachine=getDoor()
             self.manager.current='closedoor'
 
 class WashOrCollectScreen(Screen): #prompt the user whether he/she wants to wash or collect
@@ -182,7 +187,7 @@ class PoolOrPrivateScreen(Screen):
         self.manager.current='weigh'
     def private(self,instance):
         global globalWeight
-        globalWeight = maxLoad
+        globalWeight=maxLoad
         self.manager.current='washlogin'
     def home(self,instance):
         self.manager.current='welcome'
@@ -275,8 +280,8 @@ class WashLoginScreen(Screen):
         global globalCost
         global globalMachine
         global globalState
-        globalCost = getCost(globalWeight,maxLoad,fullCost)
-        globalState, globalMachine = getMachine(globalWeight, maxLoad)
+        globalCost=getCost(globalWeight,maxLoad,fullCost,pfilled)
+        globalState,globalMachine = getMachine(globalWeight,maxLoad,pfilled)
         if type(globalMachine) is int:
             self.costl.text='Cost is $%.2f' %(globalCost)
         else:
@@ -293,7 +298,7 @@ class WashLoginScreen(Screen):
         self.ut.disabled=False
         self.pt.disabled=False
     def login(self,instance):
-        if verify(self.ut.text, self.pt.text):
+        if verify(self.ut.text,self.pt.text):
             #putData(self.ut.text, weight = globalWeight, debt = globalCost)
             self.manager.current='wash'
         else:
@@ -318,7 +323,12 @@ class WashScreen(Screen):
         self.layout.add_widget(self.homeb)
     def on_pre_enter(self):
         self.washl.text='Please place your laundry in Washing Machine %d' %(globalMachine)
-        putState(globalMachine, door = 1, state = globalState, weight = globalWeight)
+        if globalState==-1:
+            putState(globalMachine,door=1,state=-1,weight=globalWeight)
+        elif getState(globalMachine,'state')==0:
+            putState(globalMachine,door=1,state=time.time(),weight=globalWeight)
+        else:
+            putState(globalMachine,door=1,weight=globalWeight)
     def on_leave(self):
         self.washl.text=''
     def home(self,instance):
@@ -440,7 +450,7 @@ class SignUpScreen(Screen):
         self.layout.add_widget(self.pl)
         self.pt=TextInput(pos_hint={'center_x':0.75,'center_y':0.475},size_hint=(0.5,0.05),multiline=False,write_tab=False,on_text_validate=self.signup,password=True)
         self.layout.add_widget(self.pt)
-        self.cpl=Label(text='Password',pos_hint={'center_x':0.25,'center_y':0.425})
+        self.cpl=Label(text='Re-type Password',pos_hint={'center_x':0.25,'center_y':0.425})
         self.layout.add_widget(self.cpl)
         self.cpt=TextInput(pos_hint={'center_x':0.75,'center_y':0.425},size_hint=(0.5,0.05),multiline=False,write_tab=False,on_text_validate=self.signup,password=True)
         self.layout.add_widget(self.cpt)
@@ -517,5 +527,7 @@ class SwitchScreenApp(App):
             return sm
 
 if __name__== '__main__':
-    initMachines(3)
+    initMachines(numOfMachines)
     SwitchScreenApp().run()
+    clearMachines()
+    
