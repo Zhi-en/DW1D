@@ -55,29 +55,6 @@ class weighingScale(object):
         return weight
 ws = weighingScale()
 
-#def getMachine(): #chooses the correct machine
-#    global globalMachine
-#    if globalWeight > 9:
-#        return 1
-#    elif globalWeight > 6:
-#        return 2
-#    else:
-#        return 3
-
-def verify(userID,password): #verifys the authenticity of the customer and charges to his account
-    if userID == 'pi' and password == 'Sutd1234':
-        return True
-    else:
-        return False
-
-def getUsers():
-    return ['pi']
-
-def createUser(UserID, password, contact):
-    pass
-
-def getData(UserID, item):
-    return 5.5
 
 #Kivy custom widgets/functions, standardise look across app
 def resetVar():
@@ -299,7 +276,13 @@ class WashLoginScreen(Screen):
         self.pt.disabled=False
     def login(self,instance):
         if verify(self.ut.text,self.pt.text):
-            #putData(self.ut.text, weight = globalWeight, debt = globalCost)
+            try:
+                weight=getData(self.ut.text,'weight')+[globalWeight]
+                machineid=getData(self.ut.text,'machineid')+[globalMachine]
+            except TypeError:
+                weight=[globalWeight]
+                machineid=[globalMachine]
+            putData(self.ut.text,weight=weight,machineid=machineid,debt=globalCost)
             self.manager.current='wash'
         else:
             self.ut.text=''
@@ -361,11 +344,29 @@ class CollectLoginScreen(Screen):
         self.pt.text=''
         self.fail.text=''
     def login(self,instance):
-        if verify(self.ut.text, self.pt.text):
-            if getData(self.ut.text, 'weight') > 0:
-                self.manager.current='collect'
-            else:
+        if verify(self.ut.text,self.pt.text):
+            if getData(self.ut.text,'weight')==None:
+                global globalState
+                globalState='You do not have any laundry to collect'
                 self.manager.current='nocollect'
+            else:
+                machinels=getData(self.ut.text,'machineid')
+                for machine in range(len(machinels)):
+                    if getState(machinels[machine],'state')==-2:
+                        global globalMachine
+                        globalMachine=machinels.pop(machine)
+                        weightls=getData(self.ut.text,'weight')
+                        weight=weightls.pop(machine)
+                        putData(self.ut.text,machineid=machinels,weight=weightls)
+                        putState(globalMachine,door=1,weight=-weight)
+                        if getState(globalMachine,'weight')==0.0:
+                            putState(globalMachine,state=0)
+                        self.manager.current='collect'
+                else:
+                    global globalState
+                    globalState='Your laundry is not ready for collection'
+                    self.manager.current='nocollect'
+                self.manager.current='collect'
         else:
             self.ut.text=''
             self.pt.text=''
@@ -400,12 +401,16 @@ class NoCollectScreen(Screen):
         super(NoCollectScreen, self).__init__(**kwargs)
         self.layout=FloatLayout()
         self.add_widget(self.layout)
-        self.collect=Label(text='You do not have any laundry to collect',font_size=20)
+        self.collect=Label(text='',font_size=20)
         self.layout.add_widget(self.collect)
         self.homeb=HomeButton(on_press=self.home)
         self.layout.add_widget(self.homeb)
         self.backb=BackButton(on_press=self.back,disabled=True)
         self.layout.add_widget(self.backb)
+    def on_pre_enter(self):
+        self.collect.text=globalState
+    def on_leave(self):
+        self.collect.text=''
     def home(self,instance):
         self.manager.current='welcome'
     def back(self,instance):
@@ -490,7 +495,7 @@ class SignUpScreen(Screen):
             self.pt.focus=True
         else:
             createUser(self.ut.text, self.pt.text, self.ct.text)
-            #putData(self.ut.text, weight = globalWeight, debt = globalCost)
+            putData(self.ut.text,weight=[globalWeight],machineid=[globalMachine],debt=globalCost)
             self.manager.current='wash'
     def home(self,instance):
         self.manager.current='welcome'
