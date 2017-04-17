@@ -65,10 +65,10 @@ def get_washInfo(userID,chatID,name):
     if machineid != None:
         for i in range(len(machineid)):
             reply0 = 'Hello %s! Here are you current washes' %(name)
-            reply1 = 'Washing Machine %d:' %(machineid[i])
-            get_machineInfo(machineid[i])
-            reply2 = 'Currently %s' %('Washing')
-            reply3 = 'Estimated time left: %s' %('2 Hours')
+            reply1 = 'Load %d:' %(i+1)
+            status,time = get_machineInfo(machineid[i])
+            reply2 = 'Currently %s in Washing Machine %d' %(status,machineid[i])
+            reply3 = 'Estimated time left: %s' %(time)
             reply = reply0 + '\n' +reply1 + '\n' + reply2 + '\n' + reply3 + '\n' + '\n'
             bot.sendMessage(chatID,reply)
     else:
@@ -76,7 +76,9 @@ def get_washInfo(userID,chatID,name):
         bot.sendMessage(chatID,reply)
 
 def get_machineInfo(machineid):
-    pass
+    status = 'Washing'
+    time = '2 Hours'
+    return status,time
 
     
 
