@@ -2,7 +2,6 @@
 import telepot
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 # Modules needed to open and access info from websites:
-import json
 import requests
 from bs4 import BeautifulSoup
 # Modules for processing that info:
@@ -10,7 +9,6 @@ import time
 from random import randint
 # Config for bot to run
 import config
-from pprint import pprint
 # Firebase stuff
 from firebase import firebase
 #Regular Expression
@@ -76,7 +74,8 @@ def get_washInfo(userID,chatID,name):
             chatIDcheck = chatID
             firebase.put('Accounts/%s/' %(userID),'chatID',chatID)
             
-        #Checks if user matches the chat ID    
+        #Checks if user matches the chat ID  
+        #Matches: Sends reply  
         if chatIDcheck == chatID:
             reply0 = 'Hello %s! Here are your current washes' %(name)
             bot.sendMessage(chatID,reply0)
@@ -90,13 +89,19 @@ def get_washInfo(userID,chatID,name):
                     reply1 = makeReply(machineid,i)
                     reply = reply0 + reply1
                     bot.sendMessage(chatID,reply)
+        #Does not match: ask user to enter own ID (the userid tagged to chatid)
         else:
             reply = "Sorry, please enter your own ID."
             bot.sendMessage(chatID,reply)
             
     #If no machines under current user, returns an error message
     else:
-        reply = "Sorry %s, you are currently not washing any laundry :(" %(name)
+        userIDcheck = firebase.get('/Accounts/%s' %(userID))
+        #checks if entered userID exists in database
+        if userIDcheck == None:
+            reply = "Sorry, this ID is not registered. Please create and account."
+        else:
+            reply = "Sorry %s, you are currently not washing any laundry :(" %(name)
         bot.sendMessage(chatID,reply)
 
 def makeReply(machineid,i):
@@ -104,32 +109,34 @@ def makeReply(machineid,i):
     status,time = get_machineInfo(machineid[i])
     reply2 = 'Currently %s in Washing Machine %d' %(status,machineid[i])
     reply3 = 'Estimated time left: %s' %(time)
-    reply = reply2 + '\n' + reply3 + '\n' + '\n'
+    
+    if time == 0:
+        reply = reply2 + '\n' + '\n'
+    else:
+        reply = reply2 + '\n' + reply3  + '\n'
     return reply
 
 def get_machineInfo(machineid):
     """Called when checking washInfo, to get information on washing machine"""
-    maxTime = "4 Hours"
-    
     #Gets state of washing machine
     status = firebase.get('/washingmachine/%r/state' %(machineid))
-    print status
+    print "Machine %r status: %r" %(machineid,status) #for reference
     if status > 0:
         status = 'washing'
+        time = '2 Hours' #change this later
     elif status == -1:
         status = 'pooling'
-        time = maxTime
+        time = "4 Hours"
     elif status == -2:
-        status = 'ready for collection *'
+        status = '* ready for collection *'
         time = 0
     else:
         status = 'Machine not in use'
         time = 0
         
-    time = '2 Hours' #change this later
     return status,time
 
-    
+
 
 
 if __name__ == '__main__':
@@ -144,5 +151,6 @@ if __name__ == '__main__':
     # Main loop
     while True:
         print('Fetching updates...')
+        #add pm funciton here
         time.sleep(10)
         
