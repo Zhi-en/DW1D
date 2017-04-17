@@ -20,18 +20,22 @@ class WashingMachine:
         if getState(self.machine, 'door') != 0:
             GPIO.output(self.closelight, 0)
             GPIO.output(self.openlight, 1)
-        elif getState(self.machine, 'state') == -1:
-            GPIO.output(self.washlight, 1)
+        else:
+            GPIO.output(self.openlight, 0)
+            GPIO.output(self.closelight, 1)
+            if getState(self.machine, 'state') == -1:
+                GPIO.output(self.washlight, 1)
         if GPIO.input(self.doorbutton):
             putState(self.machine, door = 0)
         if GPIO.input(self.washbutton):
             putState(self.machine, state = -2)
+            GPIO.output(self.washlight, 0)
 
 
-#machine1 = WashingMachine(1,18,23,24,25,12)
-#machine2 = WashingMachine(2,16,20,21,26,19)
-#machine3 = WashingMachine(3,13,6,5,22,27)
-#while True:
-#    machine1.main()
-#    machine2.main()
-#    machine3.main()
+machine1 = WashingMachine(1,18,23,24,25,12)
+machine2 = WashingMachine(2,16,20,21,26,19)
+machine3 = WashingMachine(3,13,6,5,22,27)
+while True:
+    machine1.main()
+    machine2.main()
+    machine3.main()
