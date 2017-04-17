@@ -11,7 +11,7 @@ GPIO.setmode(GPIO.BCM)
 GPIO_TRIGGER = 18
 GPIO_ECHO = 24
 GPIO_BUZZ = 10      #buzzer
-GPIO_SERVO = 11     #dispenser motor
+GPIO_SERVO = 16     #dispenser motor
 
  
 #set GPIO direction (IN / OUT)
@@ -19,6 +19,9 @@ GPIO.setup(GPIO_TRIGGER, GPIO.OUT)
 GPIO.setup(GPIO_ECHO, GPIO.IN)
 GPIO.setup(GPIO_BUZZ, GPIO.OUT)
 GPIO.setup(GPIO_SERVO, GPIO.OUT)
+GPIO.setwarnings(False)
+pwm = GPIO.PWM(GPIO_SERVO, 1000)
+
  
 def distance():
     # set Trigger to HIGH
@@ -47,16 +50,18 @@ def distance():
  
     return distance
  
-def Dispenser(distance,inp):        #Distance = distance read from sonar, inp = dispense command
-    present = range(1000,1200)      #Fixed distance of cup
+def Dispenser(distance):        #Distance = distance read from sonar, inp = dispense command
+    present = 10.0      #Fixed distance of cup
     d = distance
-    if d in present:
-        GPIO.output(GPIO_SERVO, GPIO.HIGH)       #complete revolutions at fixed speed for 3 secs
+    if d < present:
+        pwm.start(50)     #complete revolutions at fixed speed for 3 secs
+        print "Container Present, Dispensing"
         time.sleep(3)
-        GPIO.output(GPIO_SERVO, GPIO.LOW)
+        pwm.stop()
         return
     
     else:
+        print "Container not present"
         GPIO.output(GPIO_BUZZ, GPIO.HIGH)       #Buzzer Sounds
         time.sleep(0.5)
         GPIO.output(GPIO_BUZZ, GPIO.LOW)        #Buzzer off
@@ -66,6 +71,7 @@ if __name__ == '__main__':
     try:
         while True:
             dist = distance()
+            Dispenser(dist)
             print ("Measured Distance = %.1f cm" % dist)
             time.sleep(1)
  
