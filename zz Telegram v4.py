@@ -60,24 +60,73 @@ def replyCheck(msg):
 
 def get_washInfo(userID,chatID,name):
     """Called when a user ID is received, accesses Firebase to get informaion"""
+    #Returns an array of the machines used
     machineid = firebase.get('/Accounts/%s/machineid' %(userID))
-    print machineid
-    if machineid != None:
-        for i in range(len(machineid)):
-            reply0 = 'Hello %s! Here are you current washes' %(name)
-            reply1 = 'Load %d:' %(i+1)
-            status,time = get_machineInfo(machineid[i])
-            reply2 = 'Currently %s in Washing Machine %d' %(status,machineid[i])
-            reply3 = 'Estimated time left: %s' %(time)
-            reply = reply0 + '\n' +reply1 + '\n' + reply2 + '\n' + reply3 + '\n' + '\n'
+    
+    #For our reference here in python
+    print "Washing Machines used: %r" %(machineid)
+    
+    #Checks if entered user ID has any washes
+    if machineid != None:        
+        #Gets the chat ID from firebase
+        chatIDcheck = firebase.get('/Accounts/%s/chatID' %(userID))
+        
+        #If it doesn't exist, add it to firebase
+        if chatIDcheck == None:
+            chatIDcheck = chatID
+            firebase.put('Accounts/%s/' %(userID),'chatID',chatID)
+            
+        #Checks if user matches the chat ID    
+        if chatIDcheck == chatID:
+            reply0 = 'Hello %s! Here are your current washes' %(name)
+            bot.sendMessage(chatID,reply0)
+            
+            if len(machineid) == 1:
+                reply1 = makeReply(machineid,0)
+                bot.sendMessage(chatID,reply1)
+            else:
+                for i in range(len(machineid)):
+                    reply0 = 'Load %d:\n' %(i+1)
+                    reply1 = makeReply(machineid,i)
+                    reply = reply0 + reply1
+                    bot.sendMessage(chatID,reply)
+        else:
+            reply = "Sorry, please enter your own ID."
             bot.sendMessage(chatID,reply)
+            
+    #If no machines under current user, returns an error message
     else:
         reply = "Sorry %s, you are currently not washing any laundry :(" %(name)
         bot.sendMessage(chatID,reply)
 
+def makeReply(machineid,i):
+    """Called when creating a reply to the user, returns information in a string"""
+    status,time = get_machineInfo(machineid[i])
+    reply2 = 'Currently %s in Washing Machine %d' %(status,machineid[i])
+    reply3 = 'Estimated time left: %s' %(time)
+    reply = reply2 + '\n' + reply3 + '\n' + '\n'
+    return reply
+
 def get_machineInfo(machineid):
-    status = 'Washing'
-    time = '2 Hours'
+    """Called when checking washInfo, to get information on washing machine"""
+    maxTime = "4 Hours"
+    
+    #Gets state of washing machine
+    status = firebase.get('/washingmachine/%r/state' %(machineid))
+    print status
+    if status > 0:
+        status = 'washing'
+    elif status == -1:
+        status = 'pooling'
+        time = maxTime
+    elif status == -2:
+        status = 'ready for collection *'
+        time = 0
+    else:
+        status = 'Machine not in use'
+        time = 0
+        
+    time = '2 Hours' #change this later
     return status,time
 
     
