@@ -51,7 +51,7 @@ firebase = FirebaseApplication(url, token)
 '''Legend:
     machine: machine number
     door: 0 is closed, 1 is input time openned
-    state: 0 is pooling, 1 is washing, 2 is collecting
+    state: 0 is empty, -1 is washing, -2 is collecting, for pooling: time first user placed laundry in
     weight: float value
 '''
 
@@ -60,6 +60,11 @@ def initMachines(number):
     for machine in range(number + 1)[1:]:
         putState(machine, door = 0, state = 0, weight = 0)
         firebase.put('/washingmachine/%d/' %(machine), 'id', machine)
+
+
+def clearMachines():
+    for machine in firebase.get('/washingmachine/')[1:]:
+        firebase.put('/washingmachine/', str(machine['id']), None)
 
 
 def putState(machine, door = None, state = None, weight = None):
@@ -71,11 +76,11 @@ def putState(machine, door = None, state = None, weight = None):
     if state != None:
         firebase.put('/washingmachine/%d/' %(machine), 'state', state)
     if weight != None:
-        if type(weight) is float:
+        try:
             weight += getState(machine, 'weight')
             firebase.put('/washingmachine/%d/' %(machine), 'weight', weight)
-        else:
-            firebase.put('/washingmachine/%d/' %(machine), 'weight', 0)
+        except TypeError:
+            firebase.put('/washingmachine/%d/' %(machine), 'weight', 0)  
 
 
 def getState(machine, item):
@@ -89,31 +94,51 @@ def getDoor():
                 return machine['id']
 
 
-def getMachine(weight, maxLoad):    #to further improve, should incorporate time factor
-    idls = []
-    initialweight = []
-    finalweight = []
+def getWash(timeOut):
     for machine in firebase.get('/washingmachine/')[1:]:
-        if getState(machine['id'], 'state') == 0:
+        if machine['state'] > 0:
+            if time.time() - machine['state'] > timeOut:
+                return machine['id']
+
+def getMachine(weight, maxLoad, pfilled):    #to further improve, should incorporate time factor
+    idls = []
+    weightls = []
+    timels = []
+    removels = []
+    for machine in firebase.get('/washingmachine/')[1:]:
+        if machine['state'] >= 0:
             idls.append(machine['id'])
-            initialweight.append(machine['weight'])
-            finalweight.append(machine['weight'] + weight)
-    finalweight, initialweight, idls = zip(*sorted(zip(finalweight, initialweight, idls)))    #sorts lists based on final weights
-    if finalweight[-1] > 0.85*maxLoad:    #if biggest final load is > 85% of maxLoad, place in that machine and wash
-        for machine in range(len(idls))[::-1]:
-            if finalweight[machine] < maxLoad:
-                return 1, idls[machine]
-        else:    #all the final weights exceed max load
-            return 0, 'All washing machines are full\nSorry for the inconvenience caused'
+            weightls.append(machine['weight'])
+            if machine['state'] == 0:
+                timels.append(0)
+            else:
+                timels.append(time.time() - machine['state'])
+    if idls == []:
+        return 0, 'All washing machines are full\nSorry for the inconvenience caused'    #if all washing machines in washing/collecting state
+    timels, weightls, idls = zip(*sorted(zip(timels, weightls, idls), reverse = True))    #sorts lists based on time in laundry
+    timels, weightls, idls = list(timels), list(weightls), list(idls)    #converts tuples back to strings
     for machine in range(len(idls)):
-        if initialweight[machine] != 0 and finalweight[machine] < 0.65*maxLoad:    #if lightest final load of at least 2 people's laundry is < 65% of maxLoad, place in that machine
+        if weightls[machine] + weight > maxLoad:    #removes options that give an overloaded washing machine
+            removels.append(machine)
+        elif weightls[machine] + weight > pfilled*maxLoad:    #if sufficiently filled, use this
+            return -1, idls[machine]
+    if removels != []:
+        for machine in sorted(removels, reverse = True):
+            timels.remove(timels[machine])
+            weightls.remove(weightls[machine])
+            idls.remove(weightls[machine])
+    if idls == []:
+        return 0, 'All washing machines are full\nSorry for the inconvenience caused'    #if all options removed due to overloading, all are full
+    for machine in range(len(idls)):
+        if weightls[machine] != 0 and weightls[machine] + weight < 0.6*maxLoad:    #if lightest final load of at least 2 people's laundry is < 2/3 of maxLoad, place in that machine
             return 0, idls[machine]
-    if finalweight[-1] > 0.75*maxLoad:    #if biggest final load is >75% of maxLoad, place in that machine and wash (greater losses but better than starting a new machine)
-        return 1, idls[-1]
-    elif initialweight[0] == 0:    #if there are empty machines, place laundry in them
-        return 0, idls[0]
+    for machine in range(len(idls)):
+        if weightls[machine] + weight > (2*pfilled - 1)*maxLoad:    #if biggest final load is > 2pfilled - 1 of maxLoad, place in that machine and wash (equivalent losses to earnings of firt if statement better than starting a new machine)
+            return -1, idls[machine]
+    if weightls[-1] == 0:    #if there are empty machines, place laundry in them
+        return 0, idls[-1]
     else:    #if really no choice, just wash the biggest load
-        return 1, idls[-1]
+        return -1, idls[0]
         
 
 #initMachines(3)
