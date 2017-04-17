@@ -1,4 +1,4 @@
-#Requires weight, fee, and machineid
+#Requires studentid,phone,password
 #weight = weight of laundry
 #fee = how much person has to pay
 #machineid = which washing machine person is assigned to
@@ -8,23 +8,22 @@ import time
 
 url = 'https://laundry-pool.firebaseio.com/' # URL to Firebase database
 token = 'TVEKlcgHcA5QTWOrESZI8aocvLTwUX58BTjhHN1v' # unique token used for authentication
+firebase = firebase.FirebaseApplication(url, token)
 
-
-class account(object):
-    def __init__(self,name,contact,balance=0):
-        self.name = name
-        self.info = {"contact":contact,"machineid":None, "time":None, "weight":None}
-        self.balance = balance
+        
+def createAccount(studentid,phone,password):
+    weight = 0
+    machineid = 0
+    firebase.put('/Accounts/%s/' %(studentid), 'studentid', studentid)  
+    firebase.put('/Accounts/%s/' %(studentid), 'phonenumber', phone)  
+    firebase.put('/Accounts/%s/' %(studentid), 'password', password) 
+    firebase.put('/Accounts/%s/' %(studentid), 'weight', weight) 
+    firebase.put('/Accounts/%s/' %(studentid), 'machineid', machineid)  
     
-    def charge(self,value):
-        self.balance += value
-        
-    def wash(self,weight,fee,machineid):
-        self.charge(fee)
-        self.info["machineid"] = machineid
-        self.info["weight"] = weight
+studentid = 1001234
+phone = 98765432
+password = 1234
 
-        
-        
+createAccount(studentid,phone,password)
     
         
