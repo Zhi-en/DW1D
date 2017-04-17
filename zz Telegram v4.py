@@ -33,18 +33,19 @@ def on_get_msg(msg):
     # requests to the bot from a user
     content_type, chat_type, chat_id = telepot.glance(msg)
     
-    # We print this out for logging purposes:
+    # Print this out for logging purposes:
     print('{}\t{}\t{}'.format(content_type, chat_type, chat_id))
 
     # Send the response
-    bot.sendMessage(chat_id, 
-                    'Hello! Thank you for using LaundryPool. \n Please enter your Student/Staff ID to check on your wash status.')
+    welcomeMessage = 'Hello! Thank you for using LaundryPool. \n Please enter your Student/Staff ID to check on your wash status.'
+    bot.sendMessage(chat_id,welcomeMessage)
     return
 
 
 def replyCheck(msg):
     """Called when a message is received, checks to see if to send greeting or send wash info"""
     #extracts the chat ID and text from message
+    name = msg["from"]["first_name"]
     chatID = msg["from"]["id"]
     userID = msg["text"]
     
@@ -53,14 +54,30 @@ def replyCheck(msg):
     #If its not, sends welcome message
     state = re.match(r'[\d\s]{7}', userID)
     if state!= None:
-        get_washInfo(userID,chatID)
+        get_washInfo(userID,chatID,name)
     else:
         on_get_msg(msg)
 
-def get_washInfo(userID,chatID):
-    machineid = firebase.get('/Accounts/%s/machineid' %(userID)) 
-    
+def get_washInfo(userID,chatID,name):
+    """Called when a user ID is received, accesses Firebase to get informaion"""
+    machineid = firebase.get('/Accounts/%s/machineid' %(userID))
     print machineid
+    if machineid != None:
+        for i in range(len(machineid)):
+            reply0 = 'Hello %s! Here are you current washes' %(name)
+            reply1 = 'Washing Machine %d:' %(machineid[i])
+            get_machineInfo(machineid[i])
+            reply2 = 'Currently %s' %('Washing')
+            reply3 = 'Estimated time left: %s' %('2 Hours')
+            reply = reply0 + '\n' +reply1 + '\n' + reply2 + '\n' + reply3 + '\n' + '\n'
+            bot.sendMessage(chatID,reply)
+    else:
+        reply = "Sorry %s, you are currently not washing any laundry :(" %(name)
+        bot.sendMessage(chatID,reply)
+
+def get_machineInfo(machineid):
+    pass
+
     
 
 
