@@ -14,11 +14,13 @@ firebase = firebase.FirebaseApplication(url, token)
 def createAccount(studentid,phone,password):
     weight = 0
     machineid = 0
+    debt = 0
     firebase.put('/Accounts/%s/' %(studentid), 'studentid', studentid)  
     firebase.put('/Accounts/%s/' %(studentid), 'phonenumber', phone)  
     firebase.put('/Accounts/%s/' %(studentid), 'password', password) 
     firebase.put('/Accounts/%s/' %(studentid), 'weight', weight) 
     firebase.put('/Accounts/%s/' %(studentid), 'machineid', machineid)  
+    firebase.put('/Accounts/%s/' %(studentid), 'debt', debt)  
     
 studentid = 1001234
 phone = 98765432
