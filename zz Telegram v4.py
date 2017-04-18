@@ -220,7 +220,3 @@ if __name__ == '__main__':
         checkMachines()
         time.sleep(10)
     
-#223421619 (Saberlord)
-#126036523 (Zemonster)
-#235110994 (StrikerJ)
-#https://api.telegram.org/bot351253681:AAH5UPmKm6StPZrPF1VfYU7PeHf8FGxTSK8/sendMessage?chat_id=<id>&text=<text>
