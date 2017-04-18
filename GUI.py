@@ -21,6 +21,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.textinput import TextInput
 from kivy.clock import Clock
+from kivy.uix.image import Image
 
 #set GPIO pins
 #GPIO.setmode(GPIO.BCM)
@@ -70,7 +71,12 @@ def resetVar():
 class HomeButton(Button):
     def __init__(self,**kwargs):
         Button.__init__(self,**kwargs)
-        self.text='Home'
+        self.layout = BoxLayout(orientation = 'horizontal')
+        self.icon = Image(source = 'icons/home.png')
+        self.label = Label(text = 'Home')
+        self.layout.add_widget(self.icon)
+        self.layout.add_widget(self.label)
+        self.text=''
         self.font_size=20
         self.pos_hint={'left':0,'bottom':0}
         self.size_hint=(0.2,0.1)
@@ -110,6 +116,7 @@ class WelcomeScreen(Screen):
         self.layout.add_widget(self.ml)
         self.sl=Label(text='Touch anywhere to continue',font_size=20,color=(1,0,0,1),pos_hint={'center_x':0.5,'top':0.7})
         self.layout.add_widget(self.sl)
+        
     def on_pre_enter(self):
         resetVar()
         Clock.schedule_interval(self.checks, 10)
