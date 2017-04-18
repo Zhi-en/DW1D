@@ -58,31 +58,57 @@ def createUser(studentid,password,phone):
     firebase.put('/Accounts/%s/' %(studentid), 'studentid', studentid)
     firebase.put('/Accounts/%s/' %(studentid), 'password', password)
     firebase.put('/Accounts/%s/' %(studentid), 'phonenumber', phone)
-    putData(studentid, weight = None, machineid = None, debt = 'clear')  
+    putData(studentid, debt = 'clear')  
 
 def getUsers():
-    users = []
-    for user in firebase.get('/Accounts/')[1:]:
-        users.append(user['studentid'] != 0)
-    return users
+    return firebase.get('/Accounts/').keys()
+
+def resetUsers(studentid = None):
+    if studentid == None:
+        for studentid in firebase.get('/Accounts/').keys():
+            putData(studentid, weight = 'clear', machineid = 'clear', endtime = 'clear', debt = 'clear')
+    else:
+        putData(studentid, weight = 'clear', machineid = 'clear', endtime = 'clear', debt = 'clear')
 
 def verify(studentid, password):
     return getData(studentid, 'password') == password
 
-def putData(studentid, weight = None, machineid = None, debt = None):
+def putData(studentid, weight = None, machineid = None, endtime = None, debt = None, pmstate = None):
     if weight != None:
-        firebase.put('/Accounts/%s/' %(studentid), 'weight', weight)
+        if type(weight) is str:
+            firebase.put('/Accounts/%s/' %(studentid), 'weight', None)
+        else:
+            firebase.put('/Accounts/%s/' %(studentid), 'weight', weight)
     if machineid != None:
-        firebase.put('/Accounts/%s/' %(studentid), 'machineid', machineid)
+        if type(machineid) is str:
+            firebase.put('/Accounts/%s/' %(studentid), 'machineid', None)
+        else:
+            firebase.put('/Accounts/%s/' %(studentid), 'machineid', machineid)
+    if endtime != None:
+        if type(endtime) is str:
+            firebase.put('/Accounts/%s/' %(studentid), 'endtime', None)
+        else:
+            firebase.put('/Accounts/%s/' %(studentid), 'endtime', endtime)
     if debt != None:
         try:
             debt += getData(studentid, 'debt')
             firebase.put('/Accounts/%s/' %(studentid), 'debt', debt)
         except TypeError:
             firebase.put('/Accounts/%s/' %(studentid), 'debt', 0)
+    if pmstate != None:
+        if type(pmstate) is str:
+            firebase.put('/Accounts/%s/' %(studentid), 'pmstate', None)
+        else:
+            firebase.put('/Accounts/%s/' %(studentid), 'pmstate', pmstate)
 
 def getData(studentid, item):
-    return firebase.get('/Accounts/%s/%s' %(studentid, item))
+    if type(item) is list:
+        outp = []
+        for items in item:
+            outp.append(firebase.get('/Accounts/%s/%s' %(studentid, items)))
+        return tuple(outp)
+    else:
+        return firebase.get('/Accounts/%s/%s' %(studentid, item))
 
 
 #studentid = '1001234'

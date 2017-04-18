@@ -58,7 +58,7 @@ firebase = FirebaseApplication(url, token)
 
 def initMachines(number):
     for machine in range(number + 1)[1:]:
-        putState(machine, door = 0, state = 0, weight = 'clear')
+        putState(machine, door = 0, state = 0, studentid = 'clear', weight = 'clear')
         firebase.put('/washingmachine/%d/' %(machine), 'id', machine)
 
 
@@ -67,7 +67,7 @@ def clearMachines():
         firebase.put('/washingmachine/', str(machine['id']), None)
 
 
-def putState(machine, door = None, state = None, weight = None):
+def putState(machine, door = None, state = None, weight = None, studentid = None):
     if door != None:
         if door == 0:
             firebase.put('/washingmachine/%d/' %(machine), 'door', door)
@@ -80,11 +80,22 @@ def putState(machine, door = None, state = None, weight = None):
             weight += getState(machine, 'weight')
             firebase.put('/washingmachine/%d/' %(machine), 'weight', weight)
         except TypeError:
-            firebase.put('/washingmachine/%d/' %(machine), 'weight', 0.0)  
+            firebase.put('/washingmachine/%d/' %(machine), 'weight', 0.0)
+    if studentid != None:
+        if studentid == 'clear':
+            firebase.put('/washingmachine/%d/' %(machine), 'studentid', None)
+        else:
+            firebase.put('/washingmachine/%d/' %(machine), 'studentid', studentid)
 
 
 def getState(machine, item):
-    return firebase.get('/washingmachine/%d/%s' %(machine, item))
+    if type(item) is list:
+        outp = []
+        for items in item:
+            outp.append(firebase.get('/washingmachine/%d/%s' %(machine, items)))
+        return tuple(outp)
+    else:
+        return firebase.get('/washingmachine/%d/%s' %(machine, item))
 
     
 def getDoor():
