@@ -58,22 +58,37 @@ def createUser(studentid,password,phone):
     firebase.put('/Accounts/%s/' %(studentid), 'studentid', studentid)
     firebase.put('/Accounts/%s/' %(studentid), 'password', password)
     firebase.put('/Accounts/%s/' %(studentid), 'phonenumber', phone)
-    putData(studentid, weight = None, machineid = None, debt = 'clear')  
+    putData(studentid, debt = 'clear')  
 
 def getUsers():
-    users = []
-    for user in firebase.get('/Accounts/')[1:]:
-        users.append(user['studentid'] != 0)
-    return users
+    return firebase.get('/Accounts/').keys()
+
+def resetUsers(studentid = None):
+    if studentid == None:
+        for studentid in firebase.get('/Accounts/').keys():
+            putData(studentid, weight = 'clear', machineid = 'clear', entime = 'clear', debt = 'clear')
+    else:
+        putData(studentid, weight = 'clear', machineid = 'clear', endtime = 'clear', debt = 'clear')
 
 def verify(studentid, password):
     return getData(studentid, 'password') == password
 
-def putData(studentid, weight = None, machineid = None, debt = None):
+def putData(studentid, weight = None, machineid = None, endtime = None, debt = None):
     if weight != None:
-        firebase.put('/Accounts/%s/' %(studentid), 'weight', weight)
+        if type(weight) is str:
+            firebase.put('/Accounts/%s/' %(studentid), 'weight', None)
+        else:
+            firebase.put('/Accounts/%s/' %(studentid), 'weight', weight)
     if machineid != None:
-        firebase.put('/Accounts/%s/' %(studentid), 'machineid', machineid)
+        if type(machineid) is str:
+            firebase.put('/Accounts/%s/' %(studentid), 'machineid', None)
+        else:
+            firebase.put('/Accounts/%s/' %(studentid), 'machineid', machineid)
+    if endtime != None:
+        if type(endtime) is str:
+            firebase.put('/Accounts/%s/' %(studentid), 'entime', None)
+        else:
+            firebase.put('/Accounts/%s/' %(studentid), 'endtime', endtime)
     if debt != None:
         try:
             debt += getData(studentid, 'debt')

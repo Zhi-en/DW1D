@@ -21,6 +21,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.textinput import TextInput
 from kivy.clock import Clock
+from kivy.uix.image import Image
 
 #set GPIO pins
 #GPIO.setmode(GPIO.BCM)
@@ -34,6 +35,7 @@ from kivy.clock import Clock
 #fixed global variables/objects
 numOfMachines = 3
 timeOut = 2*60*60    #maximum time laundry can be left in machines before wash starts
+washTime = 30*60
 maxLoad = 10   #maximum laundry load of washing machine in kg
 fullCost = 1.0    #cost of one wash in $
 pfilled = 0.9    #approximately how full the washing machine should be to wash, also used for calculating cost
@@ -300,10 +302,18 @@ class WashLoginScreen(Screen):
             try:
                 weight=getData(self.ut.text,'weight')+[globalWeight]
                 machineid=getData(self.ut.text,'machineid')+[globalMachine]
+                studentid=getState(globalMachine,'studentid')+[self.ut.text]
             except TypeError:
                 weight=[globalWeight]
                 machineid=[globalMachine]
+                studentid=[self.ut.text]
             putData(self.ut.text,weight=weight,machineid=machineid,debt=globalCost)
+            if globalState==-1:
+                putState(globalMachine,door=1,state=-1,weight=globalWeight,studentid=studentid)
+            elif getState(globalMachine,'state')==0:
+                putState(globalMachine,door=1,state=time.time(),weight=globalWeight,studentid=studentid)
+            else:
+                putState(globalMachine,door=1,weight=globalWeight,studentid=studentid)
             self.manager.current='wash'
         else:
             self.ut.text=''
@@ -327,12 +337,6 @@ class WashScreen(Screen):
         self.layout.add_widget(self.homeb)
     def on_pre_enter(self):
         self.washl.text='Please place your laundry in Washing Machine %d' %(globalMachine)
-        if globalState==-1:
-            putState(globalMachine,door=1,state=-1,weight=globalWeight)
-        elif getState(globalMachine,'state')==0:
-            putState(globalMachine,door=1,state=time.time(),weight=globalWeight)
-        else:
-            putState(globalMachine,door=1,weight=globalWeight)
     def on_enter(self):
         Clock.schedule_once(self.home,30)
     def on_pre_leave(self):
@@ -386,16 +390,20 @@ class CollectLoginScreen(Screen):
                         globalMachine=machinels.pop(machine)
                         weightls=getData(self.ut.text,'weight')
                         weight=weightls.pop(machine)
+                        studentid=getState(globalMachine,'studentid')
+                        for user in range(len(studentid)):
+                            if studentid[user]==self.ut.text:
+                                studentid.pop(user)
+                                break
                         putData(self.ut.text,machineid=machinels,weight=weightls)
-                        putState(globalMachine,door=1,weight=-weight)
-                        if getState(globalMachine,'weight')==0.0:
+                        putState(globalMachine,door=1,weight=-weight,studentid=studentid)
+                        if getState(globalMachine,'weight')<0.001:
                             putState(globalMachine,state=0)
                         self.manager.current='collect'
                 else:
                     global globalState
                     globalState='Your laundry is not ready for collection'
                     self.manager.current='nocollect'
-                self.manager.current='collect'
         else:
             self.ut.text=''
             self.pt.text=''
@@ -495,7 +503,7 @@ class SignUpScreen(Screen):
         self.fail.text=''
     def signup(self,instance):
         if self.ut.text in getUsers():
-            self.fail.text='User ID is taken, please choose another'
+            self.fail.text='Student ID already in use, please choose another'
             self.ut.text=''
             self.ut.focus=True
         elif self.pt.text!=self.cpt.text:
@@ -522,7 +530,23 @@ class SignUpScreen(Screen):
     def home(self,instance):
         self.manager.current='welcome'
     def back(self,instance):
-        self.manager.current='washlogin'
+        self.manager.current='contactbot'
+
+class ContactBotScreen(Screen):
+    def __init__(self, **kwargs):
+        super(ContactBotScreen, self).__init__(**kwargs)
+        self.layout=FloatLayout()
+        self.add_widget(self.layout)
+        self.ml=Label(text='To receive notifications when laundry is ready for collection\nplease start chat with SUTD_LaundryPool on Telegram',font_size=30)
+        self.layout.add_widget(self.ml)
+        self.pb=Button(text='Proceed', pos_hint={'center_x':0.5,'center_y':0.25},size_hint=(0.2,0.1),on_press=self.proceed)
+        self.layout.add_widget(self.pb)
+    def on_enter(self):
+        Clock.schedule_once(self.proceed, 60)
+    def on_pre_leave(self):
+        Clock.unschedule(self.proceed)
+    def proceed(self,instance):
+        self.manager.current='wash'
 
 #Kivy main app
 class SwitchScreenApp(App):
@@ -538,6 +562,7 @@ class SwitchScreenApp(App):
             cs=CollectScreen(name='collect')
             ncs=NoCollectScreen(name='nocollect')
             sus=SignUpScreen(name='signup')
+            cbs=ContactBotScreen(name='contactbot')
             sm.add_widget(ws)
             sm.add_widget(wcs)
             sm.add_widget(pps)
@@ -548,6 +573,7 @@ class SwitchScreenApp(App):
             sm.add_widget(cs)
             sm.add_widget(ncs)
             sm.add_widget(sus)
+            sm.add_widget(cbs)
             sm.current='welcome'
             return sm
 
