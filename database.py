@@ -58,7 +58,7 @@ firebase = FirebaseApplication(url, token)
 
 def initMachines(number):
     for machine in range(number + 1)[1:]:
-        putState(machine, door = 0, state = 0, weight = 0)
+        putState(machine, door = 0, state = 0, weight = 'clear')
         firebase.put('/washingmachine/%d/' %(machine), 'id', machine)
 
 
@@ -80,7 +80,7 @@ def putState(machine, door = None, state = None, weight = None):
             weight += getState(machine, 'weight')
             firebase.put('/washingmachine/%d/' %(machine), 'weight', weight)
         except TypeError:
-            firebase.put('/washingmachine/%d/' %(machine), 'weight', 0)  
+            firebase.put('/washingmachine/%d/' %(machine), 'weight', 0.0)  
 
 
 def getState(machine, item):
@@ -126,7 +126,7 @@ def getMachine(weight, maxLoad, pfilled):    #to further improve, should incorpo
         for machine in sorted(removels, reverse = True):
             timels.remove(timels[machine])
             weightls.remove(weightls[machine])
-            idls.remove(weightls[machine])
+            idls.remove(idls[machine])
     if idls == []:
         return 0, 'All washing machines are full\nSorry for the inconvenience caused'    #if all options removed due to overloading, all are full
     for machine in range(len(idls)):

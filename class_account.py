@@ -1,8 +1,8 @@
 from firebase import firebase
 import time
 
-url = "https://rasppi2-efc3c.firebaseio.com/" # URL to Firebase database
-token = "96ph75e8wFRh1pS2IjkowbVP9onHN5YZl6g23jnN" # unique token used for authentication
+url = 'https://laundry-pool.firebaseio.com/' # URL to Firebase database
+token = 'TVEKlcgHcA5QTWOrESZI8aocvLTwUX58BTjhHN1v' # unique token used for authentication
 
 # Create a firebase object by specifying the URL of the database and its secret token.
 # The firebase object has functions put and get, that allows user to put data onto 
