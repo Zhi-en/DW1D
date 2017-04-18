@@ -78,6 +78,8 @@ def get_washInfo(userID,chatID,name):
         #Checks if user matches the chat ID  
         #Matches: Sends reply  
         if chatIDcheck == chatID:
+            #Prints for our reference
+            print "Replying to %r's query"%(chatID)
             reply0 = 'Hello %s! Here are your current washes' %(name)
             bot.sendMessage(chatID,reply0)
             
@@ -92,6 +94,8 @@ def get_washInfo(userID,chatID,name):
                     bot.sendMessage(chatID,reply)
         #Does not match: ask user to enter own ID (the userid tagged to chatid)
         else:
+            #Prints for our reference
+            print "%r did not enter id tagged to him."%(chatID)
             reply = "Sorry, please enter your own ID."
             bot.sendMessage(chatID,reply)
             
@@ -100,8 +104,12 @@ def get_washInfo(userID,chatID,name):
         userIDcheck = firebase.get('/Accounts/%s' %(userID))
         #checks if entered userID exists in database
         if userIDcheck == None:
+            #Prints for our reference
+            print "Invalid ID entered"
             reply = "Sorry, this ID is not registered. Please create and account."
         else:
+            #Prints for our reference
+            print "%r is not washing any laundry."%(chatID)
             reply = "Sorry %s, you are currently not washing any laundry :(" %(name)
         bot.sendMessage(chatID,reply)
 
@@ -165,20 +173,38 @@ def formatTime(time):
     
 def checkMachines():
     """Called when periodically by main() to check washing machine states"""
+    #Repeats for all 3 Washing Machines (wm)
     for i in range (3):
+        #Gets state of wm
         wm = firebase.get('/washingmachine/%s/state'%(str(i+1)))
+        #If wash is ready for collection
         if wm == -2:
+            #Gets Users assigned to this wm
             users = firebase.get('/washingmachine/%s/studentid'%(str(i+1)))
+            #For all assgined users
             for j in users:
+                #Get their chatID and pmState
                 ID = firebase.get('/Accounts/%s/chatID' %(str(j)))
-                if ID != None: 
-                    reply = "Hello! Your laundry in washing machine %r is now ready for collection!" %(i+1)
+                pmState = firebase.get('/Accounts/%s/pmstate' %(str(j)))
+                #If pmState does not exist, add it
+                if pmState == None:
+                    firebase.put('/Accounts/%s/' %(str(j)),"pmstate",1)
+                    pmState = 0
+                #change pmState to 0 after 15mins
+                elif pmState < 90:
+                    pmState += 1
+                    firebase.put('/Accounts/%s/' %(str(j)),"pmstate",pmState)
+                else:
+                    pmState = 0
+                    firebase.put('/Accounts/%s/' %(str(j)),"pmstate",pmState)
+                #If chatID exists and pmState = 0, pm the user
+                if ID != None and pmState == 0: 
+                    #Prints message for our reference
+                    print "Messenging user: %r"%(ID)
+                    #PMs user 
+                    reply = "Hello! Your laundry in washing machine %r is now ready for collection!"%(i+1)
                     bot.sendMessage(ID,reply)
     
-        
-    
-
-
 if __name__ == '__main__':
     # Bot setup stuff
     #load_results_pool()
