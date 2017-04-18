@@ -22,9 +22,9 @@ def createAccount(studentid,phone,password):
     firebase.put('/Accounts/%s/' %(studentid), 'machineid', machineid)  
     firebase.put('/Accounts/%s/' %(studentid), 'debt', debt)  
     
-studentid = 1001234
-phone = 98765432
-password = 1234
+studentid = 1001573
+phone = 91148029
+password = 'Sutd1234'
 
 createAccount(studentid,phone,password)
     
