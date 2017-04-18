@@ -58,7 +58,7 @@ firebase = FirebaseApplication(url, token)
 
 def initMachines(number):
     for machine in range(number + 1)[1:]:
-        putState(machine, door = 0, state = 0, weight = 'clear')
+        putState(machine, door = 0, state = 0, studentid = 'clear', weight = 'clear')
         firebase.put('/washingmachine/%d/' %(machine), 'id', machine)
 
 

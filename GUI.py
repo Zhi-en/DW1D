@@ -35,7 +35,7 @@ from kivy.uix.image import Image
 #fixed global variables/objects
 numOfMachines = 3
 timeOut = 2*60*60    #maximum time laundry can be left in machines before wash starts
-washTime = 30*60
+washTime = 40*60    #the hostel washing machine takes about 40mins for a wash
 maxLoad = 10   #maximum laundry load of washing machine in kg
 fullCost = 1.0    #cost of one wash in $
 pfilled = 0.9    #approximately how full the washing machine should be to wash, also used for calculating cost
@@ -299,15 +299,25 @@ class WashLoginScreen(Screen):
         self.pt.disabled=False
     def login(self,instance):
         if verify(self.ut.text,self.pt.text):
-            try:
-                weight=getData(self.ut.text,'weight')+[globalWeight]
-                machineid=getData(self.ut.text,'machineid')+[globalMachine]
-                studentid=getState(globalMachine,'studentid')+[self.ut.text]
-            except TypeError:
+            if getData(self.ut.text,'weight')==None:
                 weight=[globalWeight]
                 machineid=[globalMachine]
+                if globalState==0:
+                    endtime=[time.time()+washTime+timeOut]
+                else:
+                    endtime=[getState(globalMachine,'state')+washTime+timeOut]
+            else:
+                weight=getData(self.ut.text,'weight')+[globalWeight]
+                machineid=getData(self.ut.text,'machineid')+[globalMachine]
+                if globalState==0:
+                    endtime=getData(self.ut.text,'endtime')+[time.time()+washTime+timeOut]
+                else:
+                    endtime=getData(self.ut.text,'endtime')+[getState(globalMachine,'state')+washTime+timeOut]
+            if getState(globalMachine,'studentid')==None:
                 studentid=[self.ut.text]
-            putData(self.ut.text,weight=weight,machineid=machineid,debt=globalCost)
+            else:
+                studentid=getState(globalMachine,'studentid')+[self.ut.text]
+            putData(self.ut.text,weight=weight,machineid=machineid,endtime=endtime,debt=globalCost)
             if globalState==-1:
                 putState(globalMachine,door=1,state=-1,weight=globalWeight,studentid=studentid)
             elif getState(globalMachine,'state')==0:
@@ -391,11 +401,13 @@ class CollectLoginScreen(Screen):
                         weightls=getData(self.ut.text,'weight')
                         weight=weightls.pop(machine)
                         studentid=getState(globalMachine,'studentid')
+                        endtimels=getData(self.ut.text,'endtime')
+                        endtimels.pop(machine)
                         for user in range(len(studentid)):
                             if studentid[user]==self.ut.text:
                                 studentid.pop(user)
                                 break
-                        putData(self.ut.text,machineid=machinels,weight=weightls)
+                        putData(self.ut.text,machineid=machinels,weight=weightls,endtime=endtimels)
                         putState(globalMachine,door=1,weight=-weight,studentid=studentid)
                         if getState(globalMachine,'weight')<0.001:
                             putState(globalMachine,state=0)
