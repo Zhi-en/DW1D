@@ -196,7 +196,7 @@ def checkMachines():
                     firebase.put('/Accounts/%s/' %(str(j)),"pmstate",pmState)
                 else:
                     pmState = 0
-                    firebase.put('/Accounts/%s/' %(str(j)),"pmstate",pmState)
+                    firebase.put('/Accounts/%s/' %(str(j)),"pmstate",pmState+1)
                 #If chatID exists and pmState = 0, pm the user
                 if ID != None and pmState == 0: 
                     #Prints message for our reference
