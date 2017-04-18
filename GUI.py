@@ -6,7 +6,7 @@ import time
 #from weigh import weighingScale
 from weigh import getCost
 #from soap import giveSoap    #dispenses soap when cup is detected
-from account import createUser, getUsers, verify, putData, getData
+#from account import createUser, getUsers, verify, putData, getData
 from database import initMachines, clearMachines, putState, getState, getMachine, getDoor, getWash
 
 #import kivy functions
@@ -131,7 +131,7 @@ class WelcomeScreen(Screen):
         self.add_widget(self.layout)
         self.ml=Label(text='Welcome to Laundry Pool',font_size=50,color=(0,1,0,1))
         self.layout.add_widget(self.ml)
-        self.sl=Label(text='click anywhere on screen to continue',font_size=20,color=(1,0,0,1),pos_hint={'center_x':0.5,'top':0.7})
+        self.sl=Label(text='Touch anywhere to continue',font_size=20,color=(1,0,0,1),pos_hint={'center_x':0.5,'top':0.7})
         self.layout.add_widget(self.sl)
     def on_pre_enter(self):
         resetVar()
@@ -255,18 +255,18 @@ class WashLoginScreen(Screen):
         super(WashLoginScreen, self).__init__(**kwargs)
         self.layout=FloatLayout()
         self.add_widget(self.layout)
-        self.costl=Label(text='',font_size=30,pos_hint={'center_x':0.5,'center_y':0.85}) #Label that displays costs to be paid
+        self.costl=Label(text='',font_size=35,pos_hint={'center_x':0.5,'center_y':0.85}) #Label that displays costs to be paid
         self.layout.add_widget(self.costl)
         self.fail=Label(text='',font_size=20,color=(1,0,0,1),pos_hint={'center_x':0.5,'center_y':0.7}) #Label that appears when wrong userid/password is input
         self.layout.add_widget(self.fail)
         self.ul=Label(text='User ID',pos_hint={'center_x':0.25,'center_y':0.525})
         self.layout.add_widget(self.ul)
-        self.ut=TextInput(pos_hint={'center_x':0.75,'center_y':0.525},size_hint=(0.5,0.05),multiline=False,write_tab=False,on_text_validate=self.login) #write_tab and on_text_validate enable use of tab to go to next text field and enter to return a function
+        self.ut=TextInput(pos_hint={'center_x':0.75,'center_y':0.525},size_hint=(0.4,0.05),multiline=False,write_tab=False,on_text_validate=self.login) #write_tab and on_text_validate enable use of tab to go to next text field and enter to return a function
         self.ut.focus=True
         self.layout.add_widget(self.ut)
         self.pl=Label(text='Password',pos_hint={'center_x':0.25,'center_y':0.475})
         self.layout.add_widget(self.pl)
-        self.pt=TextInput(pos_hint={'center_x':0.75,'center_y':0.475},size_hint=(0.5,0.05),multiline=False,write_tab=False,on_text_validate=self.login,password=True)
+        self.pt=TextInput(pos_hint={'center_x':0.75,'center_y':0.475},size_hint=(0.4,0.05),multiline=False,write_tab=False,on_text_validate=self.login,password=True)
         self.layout.add_widget(self.pt)
         self.lb=Button(text='Login',pos_hint={'center_x':0.7,'center_y':0.25},size_hint=(0.2,0.1),on_press=self.login)
         self.layout.add_widget(self.lb)
@@ -283,7 +283,7 @@ class WashLoginScreen(Screen):
         globalCost=getCost(globalWeight,maxLoad,fullCost,pfilled)
         globalState,globalMachine = getMachine(globalWeight,maxLoad,pfilled)
         if type(globalMachine) is int:
-            self.costl.text='Cost is $%.2f' %(globalCost)
+            self.costl.text='Please pay $%.2f' %(globalCost)
         else:
             self.costl.text=str(globalMachine)
             self.lb.disabled=True
