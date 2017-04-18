@@ -43,7 +43,7 @@ def on_get_msg(msg):
 def replyCheck(msg):
     """Called when a message is received, checks to see if to send greeting or send wash info"""
     #extracts the chat ID and text from message
-    print msg
+    #print msg
     name = msg["from"]["first_name"]
     chatID = msg["from"]["id"]
     userID = msg["text"]
@@ -82,12 +82,12 @@ def get_washInfo(userID,chatID,name):
             bot.sendMessage(chatID,reply0)
             
             if len(machineid) == 1:
-                reply1 = makeReply(machineid,0)
+                reply1 = makeReply(userID,machineid,0)
                 bot.sendMessage(chatID,reply1)
             else:
                 for i in range(len(machineid)):
                     reply0 = 'Load %d:\n' %(i+1)
-                    reply1 = makeReply(machineid,i)
+                    reply1 = makeReply(userID,machineid,i)
                     reply = reply0 + reply1
                     bot.sendMessage(chatID,reply)
         #Does not match: ask user to enter own ID (the userid tagged to chatid)
@@ -105,11 +105,12 @@ def get_washInfo(userID,chatID,name):
             reply = "Sorry %s, you are currently not washing any laundry :(" %(name)
         bot.sendMessage(chatID,reply)
 
-def makeReply(machineid,i):
+def makeReply(userID,machineid,i):
     """Called when creating a reply to the user, returns information in a string"""
-    status,time = get_machineInfo(machineid[i])
+    status = get_machineInfo(machineid[i]) #get machine status
+    time = get_time(userID,i) #get time remaining
     reply2 = 'Currently %s in Washing Machine %d' %(status,machineid[i])
-    reply3 = 'Estimated time left: %s' %(time)
+    reply3 = 'Estimated time left: %r' %(time)
     
     if time == 0:
         reply = reply2 + '\n' + '\n'
@@ -118,26 +119,64 @@ def makeReply(machineid,i):
     return reply
 
 def get_machineInfo(machineid):
-    """Called when checking washInfo, to get information on washing machine"""
+    """Called when makeReply is getting washInfo, to get information on washing machine"""
     #Gets state of washing machine
     status = firebase.get('/washingmachine/%r/state' %(machineid))
     print "Machine %r status: %r" %(machineid,status) #for reference
     if status > 0:
-        status = 'washing'
-        time = '2 Hours' #change this later
-    elif status == -1:
         status = 'pooling'
-        time = "4 Hours"
+    elif status == -1:
+        status = 'washing'
     elif status == -2:
         status = '* ready for collection *'
-        time = 0
     else:
         status = 'Machine not in use'
-        time = 0
+    return status
+
+def get_time(userID,i):
+    """Called when makeReply is getting washInfo, to get information on time remaining"""
+    endTimeList = firebase.get('/Accounts/%s/endtime' %(str(userID)))
+    currentTime = time.time()
+    #If endtime is not logged returns error
+    if endTimeList == None:
+        return None
+    else:
+        iTime = endTimeList[i]
+        diff = iTime - currentTime
+        if diff > 0:
+            return formatTime(diff)
+        else:
+            return 0
+
+def formatTime(time):
+    """Called when get_time is formatting time to a string"""
+    if time > 3600:
+        hours = time/3600
+        minutes = (time%3600)/60
+        #seconds = (time%3600)%60
+        return "%d Hours and %02d Minutes" %(hours,minutes)
+    elif time > 60:
+        minutes = time/60
+        seconds = time%60
+        return "%d Minutes and %02d Seconds" %(minutes,seconds)
+    else:
+        seconds = time
+        return "%02d Seconds" %(seconds)
+    
+def checkMachines():
+    """Called when periodically by main() to check washing machine states"""
+    for i in range (3):
+        wm = firebase.get('/washingmachine/%s/state'%(str(i+1)))
+        if wm == -2:
+            users = firebase.get('/washingmachine/%s/studentid'%(str(i+1)))
+            for j in users:
+                ID = firebase.get('/Accounts/%s/chatID' %(str(j)))
+                if ID != None: 
+                    reply = "Hello! Your laundry in washing machine %r is now ready for collection!" %(i+1)
+                    bot.sendMessage(ID,reply)
+    
         
-    return status,time
-
-
+    
 
 
 if __name__ == '__main__':
@@ -152,7 +191,7 @@ if __name__ == '__main__':
     # Main loop
     while True:
         print('Fetching updates...')
-        #add pm funciton here
+        checkMachines()
         time.sleep(10)
     
 #223421619 (Saberlord)
