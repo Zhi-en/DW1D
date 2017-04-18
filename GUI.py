@@ -33,7 +33,7 @@ from kivy.clock import Clock
 
 #fixed global variables/objects
 numOfMachines = 3
-timeOut = 2*60
+timeOut = 2*60*60    #maximum time laundry can be left in machines before wash starts
 maxLoad = 10   #maximum laundry load of washing machine in kg
 fullCost = 1.0    #cost of one wash in $
 pfilled = 0.9    #approximately how full the washing machine should be to wash, also used for calculating cost
@@ -44,6 +44,7 @@ globalWeight = 0
 globalCost = 0
 globalMachine = 0
 globalState = 0
+screenStart = 0
 
 
 #placeholder functions TO BE REPLACED WITH ACTUAL CODE
@@ -108,11 +109,13 @@ class WelcomeScreen(Screen):
         self.add_widget(self.layout)
         self.ml=Label(text='Welcome to Laundry Pool',font_size=50,color=(0,1,0,1))
         self.layout.add_widget(self.ml)
+        self.close=Label(text='',font_size=20)    #tells user to close an open laundry door if any door is left open
+        self.layout.add_widget(self.close)
         self.sl=Label(text='click anywhere on screen to continue',font_size=20,color=(1,0,0,1),pos_hint={'center_x':0.5,'top':0.7})
         self.layout.add_widget(self.sl)
     def on_pre_enter(self):
         resetVar()
-        Clock.schedule_interval(self.checks, 10)
+        Clock.schedule_interval(self.checks,10)
     def on_pre_leave(self):
         Clock.unschedule(self.checks)
     def nextscreen(self, instance, value): #function to go to next screen
@@ -120,10 +123,14 @@ class WelcomeScreen(Screen):
     def checks(self,instance): #checks if all doors are closed (if not, go to the close door screen) and pooling time does not exceed timeOut
         if getWash(timeOut)!=None:
             putState(getWash(timeOut),state=-1)
-        if getDoor()!=None:
-            global globalMachine
-            globalMachine=getDoor()
-            self.manager.current='closedoor'
+        if getDoor()!=None and self.close.text=='':
+            self.ml.text=''
+            self.sl.text=''
+            self.close.text='Please close the door of Washing Machine %d'%(getDoor())
+        elif self.ml.text=='':
+            self.close.text=''
+            self.ml.text='Welcome to Laundry Pool'
+            self.sl.text='click anywhere on screen to continue'
 
 class WashOrCollectScreen(Screen): #prompt the user whether he/she wants to wash or collect
     def __init__(self, **kwargs):
@@ -138,6 +145,10 @@ class WashOrCollectScreen(Screen): #prompt the user whether he/she wants to wash
         self.layout.add_widget(self.homeb)
         self.backb=BackButton(on_press=self.back)
         self.layout.add_widget(self.backb)
+    def on_enter(self):
+        Clock.schedule_once(self.home,60)    #returns to home screen if left on this screen for too long
+    def on_pre_leave(self):
+        Clock.unschedule(self.home)
     def wash(self,instance):
         self.manager.current='poolorprivate'
     def collect(self,instance):
@@ -160,6 +171,10 @@ class PoolOrPrivateScreen(Screen):
         self.layout.add_widget(self.homeb)
         self.backb=BackButton(on_press=self.back)
         self.layout.add_widget(self.backb)
+    def on_enter(self):
+        Clock.schedule_once(self.home,60)
+    def on_pre_leave(self):
+        Clock.unschedule(self.home)
     def pool(self,instance):
         self.manager.current='weigh'
     def private(self,instance):
@@ -188,8 +203,10 @@ class WeighScreen(Screen):
         self.weightl.text=str(ws.tareScale())
     def on_enter(self):
         Clock.schedule_interval(self.weigh,0.1)
+        Clock.schedule_once(self.home,2*60)
     def on_pre_leave(self):
         Clock.unschedule(self.weigh)
+        Clock.unschedule(self.home)
     def on_leave(self):
         self.weightl.text=''
         self.proceedb.disabled=True
@@ -236,7 +253,7 @@ class WashLoginScreen(Screen):
         self.layout.add_widget(self.costl)
         self.fail=Label(text='',font_size=20,color=(1,0,0,1),pos_hint={'center_x':0.5,'center_y':0.7}) #Label that appears when wrong userid/password is input
         self.layout.add_widget(self.fail)
-        self.ul=Label(text='User ID',pos_hint={'center_x':0.25,'center_y':0.525})
+        self.ul=Label(text='Student ID',pos_hint={'center_x':0.25,'center_y':0.525})
         self.layout.add_widget(self.ul)
         self.ut=TextInput(pos_hint={'center_x':0.75,'center_y':0.525},size_hint=(0.5,0.05),multiline=False,write_tab=False,on_text_validate=self.login) #write_tab and on_text_validate enable use of tab to go to next text field and enter to return a function
         self.ut.focus=True
@@ -266,6 +283,10 @@ class WashLoginScreen(Screen):
             self.lb.disabled=True
             self.ut.disabled=True
             self.pt.disabled=True
+    def on_enter(self):
+        Clock.schedule_once(self.home,60)
+    def on_pre_leave(self):
+        Clock.unschedule(self.home)
     def on_leave(self):
         self.costl.text=''
         self.ut.text=''
@@ -312,6 +333,10 @@ class WashScreen(Screen):
             putState(globalMachine,door=1,state=time.time(),weight=globalWeight)
         else:
             putState(globalMachine,door=1,weight=globalWeight)
+    def on_enter(self):
+        Clock.schedule_once(self.home,30)
+    def on_pre_leave(self):
+        Clock.unschedule(self.home)
     def on_leave(self):
         self.washl.text=''
     def home(self,instance):
@@ -324,7 +349,7 @@ class CollectLoginScreen(Screen):
         self.add_widget(self.layout)
         self.fail=Label(text='',font_size=20,color=(1,0,0,1),pos_hint={'center_x':0.5,'center_y':0.8})
         self.layout.add_widget(self.fail)
-        self.ul=Label(text='User ID',pos_hint={'center_x':0.25,'center_y':0.525})
+        self.ul=Label(text='Student ID',pos_hint={'center_x':0.25,'center_y':0.525})
         self.layout.add_widget(self.ul)
         self.ut=TextInput(pos_hint={'center_x':0.75,'center_y':0.525},size_hint=(0.5,0.05),multiline=False,write_tab=False,on_text_validate=self.login)
         self.ut.focus=True
@@ -339,6 +364,10 @@ class CollectLoginScreen(Screen):
         self.layout.add_widget(self.homeb)
         self.backb=BackButton(on_press=self.back)
         self.layout.add_widget(self.backb)
+    def on_enter(self):
+        Clock.schedule_once(self.home,60)
+    def on_pre_leave(self):
+        Clock.unschedule(self.home)
     def on_leave(self):
         self.ut.text=''
         self.pt.text=''
@@ -389,6 +418,10 @@ class CollectScreen(Screen):
         self.layout.add_widget(self.backb)
     def on_pre_enter(self):
         self.collect.text='Please collect your laundry from Washing Machine %d' %(globalMachine)
+    def on_enter(self):
+        Clock.schedule_once(self.home, 30)
+    def on_pre_leave(self):
+        Clock.unschedule(self.home)
     def on_leave(self):
         self.collect.text=''
     def home(self,instance):
@@ -407,6 +440,10 @@ class NoCollectScreen(Screen):
         self.layout.add_widget(self.homeb)
         self.backb=BackButton(on_press=self.back,disabled=True)
         self.layout.add_widget(self.backb)
+    def on_enter(self):
+        Clock.schedule_once(self.home,30)
+    def on_pre_leave(self):
+        Clock.unschedule(self.home)
     def on_pre_enter(self):
         self.collect.text=globalState
     def on_leave(self):
@@ -415,25 +452,6 @@ class NoCollectScreen(Screen):
         self.manager.current='welcome'
     def back(self,instance):
         self.manager.current='collectlogin'
-
-class CloseDoorScreen(Screen):
-    def __init__(self, **kwargs):
-        super(CloseDoorScreen, self).__init__(**kwargs)
-        self.layout=FloatLayout()
-        self.add_widget(self.layout)
-        global globalMachine
-        self.close=Label(text='',font_size=20)    #tells user to close an open laundry door if any door is left open
-        self.layout.add_widget(self.close)
-        self.homeb=HomeButton(on_press=self.home)
-        self.layout.add_widget(self.homeb)
-    def on_pre_enter(self):
-        self.close.text='Please close the door of Washing Machine %d'%(globalMachine)
-    def on_leave(self):
-        self.close.text=''
-    def home(self,instance):
-        global startTime
-        startTime = time.time()
-        self.manager.current='welcome'
 
 class SignUpScreen(Screen):
     def __init__(self, **kwargs):
@@ -447,7 +465,7 @@ class SignUpScreen(Screen):
         self.ct=TextInput(pos_hint={'center_x':0.75,'center_y':0.575},size_hint=(0.5,0.05),multiline=False,write_tab=False,on_text_validate=self.signup)
         self.ct.focus=True
         self.layout.add_widget(self.ct)
-        self.ul=Label(text='User ID',pos_hint={'center_x':0.25,'center_y':0.525})
+        self.ul=Label(text='Student ID',pos_hint={'center_x':0.25,'center_y':0.525})
         self.layout.add_widget(self.ul)
         self.ut=TextInput(pos_hint={'center_x':0.75,'center_y':0.525},size_hint=(0.5,0.05),multiline=False,write_tab=False,on_text_validate=self.signup)
         self.layout.add_widget(self.ut)
@@ -465,6 +483,10 @@ class SignUpScreen(Screen):
         self.layout.add_widget(self.homeb)
         self.backb=BackButton(on_press=self.back)
         self.layout.add_widget(self.backb)
+    def on_enter(self):
+        Clock.schedule_once(self.home, 2*60)
+    def on_pre_leave(self):
+        Clock.unschedule(self.home)
     def on_leave(self):
         self.ct.text=''
         self.ut.text=''
@@ -515,7 +537,6 @@ class SwitchScreenApp(App):
             cls=CollectLoginScreen(name='collectlogin')
             cs=CollectScreen(name='collect')
             ncs=NoCollectScreen(name='nocollect')
-            cds=CloseDoorScreen(name='closedoor')
             sus=SignUpScreen(name='signup')
             sm.add_widget(ws)
             sm.add_widget(wcs)
@@ -526,7 +547,6 @@ class SwitchScreenApp(App):
             sm.add_widget(cls)
             sm.add_widget(cs)
             sm.add_widget(ncs)
-            sm.add_widget(cds)
             sm.add_widget(sus)
             sm.current='welcome'
             return sm
@@ -534,5 +554,5 @@ class SwitchScreenApp(App):
 if __name__== '__main__':
     initMachines(numOfMachines)
     SwitchScreenApp().run()
-    clearMachines()
+#    clearMachines()
     
