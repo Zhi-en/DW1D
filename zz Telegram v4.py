@@ -43,6 +43,7 @@ def on_get_msg(msg):
 def replyCheck(msg):
     """Called when a message is received, checks to see if to send greeting or send wash info"""
     #extracts the chat ID and text from message
+    print msg
     name = msg["from"]["first_name"]
     chatID = msg["from"]["id"]
     userID = msg["text"]
@@ -153,4 +154,8 @@ if __name__ == '__main__':
         print('Fetching updates...')
         #add pm funciton here
         time.sleep(10)
-        
+    
+#223421619 (Saberlord)
+#126036523 (Zemonster)
+#235110994 (StrikerJ)
+#https://api.telegram.org/bot351253681:AAH5UPmKm6StPZrPF1VfYU7PeHf8FGxTSK8/sendMessage?chat_id=<id>&text=<text>
