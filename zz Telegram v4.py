@@ -191,14 +191,14 @@ def checkMachines():
                     firebase.put('/Accounts/%s/' %(str(j)),"pmstate",1)
                     pmState = 0
                 #change pmState to 0 after 15mins
-                elif pmState < 90:
+                elif pmState < 90 and pmState > 0:
                     pmState += 1
                     firebase.put('/Accounts/%s/' %(str(j)),"pmstate",pmState)
                 else:
                     pmState = 0
                     firebase.put('/Accounts/%s/' %(str(j)),"pmstate",pmState)
                 #If chatID exists and pmState = 0, pm the user
-                if ID != None and pmState == 1: 
+                if ID != None and pmState == 0: 
                     #Prints message for our reference
                     print "Messenging user: %r"%(ID)
                     #PMs user 
