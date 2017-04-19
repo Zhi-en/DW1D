@@ -89,7 +89,13 @@ def putState(machine, door = None, state = None, weight = None, studentid = None
 
 
 def getState(machine, item):
-    return firebase.get('/washingmachine/%d/%s' %(machine, item))
+    if type(item) is list:
+        outp = []
+        for items in item:
+            outp.append(firebase.get('/washingmachine/%d/%s' %(machine, items)))
+        return tuple(outp)
+    else:
+        return firebase.get('/washingmachine/%d/%s' %(machine, item))
 
     
 def getDoor():
