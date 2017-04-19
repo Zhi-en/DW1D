@@ -3,7 +3,6 @@ import telepot
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 # Modules needed to open and access info from websites:
 import requests
-from bs4 import BeautifulSoup
 # Modules for processing that info:
 import time
 from random import randint
@@ -25,7 +24,7 @@ botURL = "https://api.telegram.org/bot{}/".format(API_KEY)
 
 
 def on_get_msg(msg):
-    """Called when a message is received, sends a greeting & custom keyboard"""
+    """Called when a message is received, sends a greeting"""
     
     # telepot.glace() lets us grab the important info we need to handle 
     # requests to the bot from a user
