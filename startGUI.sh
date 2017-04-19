@@ -3,4 +3,5 @@
 
 # sudo apt-get update -y
 # cd /home/pi/Documents/DW1D
+bash
 git checkout master && git pull && python GUI.py
