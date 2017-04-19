@@ -207,12 +207,10 @@ def checkMachines():
     
 if __name__ == '__main__':
     # Bot setup stuff
-    #load_results_pool()
     bot = telepot.Bot(API_KEY)
 
     bot.message_loop({'chat': replyCheck})
     print('Now listening...')
-    #ID = queryID()
     
     # Main loop
     while True:
