@@ -1,4 +1,4 @@
-import time
+from ntptime import time
 import firebase
 
 url = 'https://laundry-pool.firebaseio.com/'
@@ -30,7 +30,7 @@ def putState(machine, door = None, state = None, weight = None, studentid = None
         if door == 0:    #0 is the command that door is closed
             firebase.put('/washingmachine/%d/' %(machine), 'door', door)
         elif door == 1:    #1 is the command that door is opened and puts time of openning
-            firebase.put('/washingmachine/%d/' %(machine), 'door', time.time())
+            firebase.put('/washingmachine/%d/' %(machine), 'door', time())
     if state != None:
         firebase.put('/washingmachine/%d/' %(machine), 'state', state)
     if weight != None:
@@ -59,14 +59,14 @@ def getState(machine, item):    #gets the attributes of the machines from fireba
 def getDoor():
     for machine in firebase.get('/washingmachine/')[1:]:
         if machine['door'] != 0:
-            if time.time() - machine['door'] > 2*60:    #if door is left open for > 2 minutes, informs user to close door
+            if time() - machine['door'] > 2*60:    #if door is left open for > 2 minutes, informs user to close door
                 return machine['id']
 
 
 def getWash(timeOut):
     for machine in firebase.get('/washingmachine/')[1:]:
         if machine['state'] > 0:
-            if time.time() - machine['state'] > timeOut:    #if the laundry has been left in washing machine for too long, retrieves the washing machine number
+            if time() - machine['state'] > timeOut:    #if the laundry has been left in washing machine for too long, retrieves the washing machine number
                 return machine['id']
 
 def getMachine(weight, maxLoad, pfilled):    #optimises machine to place laundry in by prioritising waiting time of users given several conditions
@@ -81,7 +81,7 @@ def getMachine(weight, maxLoad, pfilled):    #optimises machine to place laundry
             if machine['state'] == 0:
                 timels.append(0)
             else:
-                timels.append(time.time() - machine['state'])
+                timels.append(time() - machine['state'])
     if idls == []:
         return 0, 'All washing machines are full\nSorry for the inconvenience caused'    #if all washing machines in washing/collecting state
     timels, weightls, idls = zip(*sorted(zip(timels, weightls, idls), reverse = True))    #sorts lists based on time in laundry

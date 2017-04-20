@@ -68,6 +68,12 @@ def Dispenser():        #Distance = distance read from sonar, inp = dispense com
         GPIO.output(GPIO_Red, GPIO.HIGH)       #Red LED lights up
         return False
 
+def ClearLEDs():    #Cleans up the pins if exits prematurely
+    GPIO.output(GPIO_Red, GPIO.LOW)
+    GPIO.output(GPIO_Green, GPIO.LOW)
+    pwm.stop()
+
+
 #if __name__ == '__main__':
 #    try:
 #        while True:

@@ -12,12 +12,12 @@
 
 #import raspi/python functions
 import RPi.GPIO as GPIO
-import time
+from ntptime import time
 
 #import 1D functions
 from weigh import weighingScale
 from weigh import getCost
-from soap import Dispenser
+from soap import Dispenser, ClearLEDs
 from account import createUser, getUsers, verify, putData, getData
 from database import initMachines, clearMachines, putState, getState, getMachine, getDoor, getWash
 
@@ -67,7 +67,7 @@ globalState = 0    #0 if insufficient load to wash, 1 if sufficient, used to pas
 #    def tareScale(self): #Tares the load cell
 #        return 'Please place laundry on the weighing scale'
 #    def getWeight(self): #gets the weight of clothes
-#        weight = ((time.time())/60)%10    #gives a variable weight based on time
+#        weight = ((time())/60)%10    #gives a variable weight based on time
 #        return weight
 #ws = weighingScale()
 #
@@ -270,6 +270,8 @@ class WeighScreen(MyScreen):
         self.layout.add_widget(proceedl)
         self.layout.add_widget(homeb)
         self.layout.add_widget(backb)
+        self.count=0
+        self.weightls=[0 for i in range(5)]
     def on_pre_enter(self):
         self.weightl.text=str(ws.tareScale())
     def on_enter(self):
@@ -295,15 +297,13 @@ class WeighScreen(MyScreen):
         else:
             weight=ws.getWeight()
             if type(weight) is float:
-                delta=0.5    #allowable difference in value range to ensure stable weight returned
-                weightls=[0 for i in range(5)]
-                count=0
-                weightls[count]=weight
-                self.weightl.text='Weight: %.2fkg'%(weightls[count])
-                count+=1
-                if count==5:
-                    count=0
-                if max(weightls)-min(weightls)<=delta:
+                delta=0.1    #allowable difference in value range to ensure stable weight returned
+                self.weightls[self.count]=weight
+                self.weightl.text='Weight: %.2fkg'%(self.weightls[self.count])
+                self.count+=1
+                if self.count==5:
+                    self.count=0
+                if max(self.weightls)-min(self.weightls)<=delta:
                     global globalWeight
                     globalWeight = weight
                     self.proceedb.disabled=False
@@ -385,14 +385,14 @@ class WashLoginScreen(MyScreen):
                 weight=[globalWeight]
                 machineid=[globalMachine]
                 if timing==0:    #of no laudry in the machine, puts time of putting laundry
-                    endtime=[time.time()+washTime+timeOut]
+                    endtime=[time()+washTime+timeOut]
                 else:    #uses the first user's time of putting laundry
                     endtime=[timing+washTime+timeOut]
             else:    #adds new wash info to current washes
                 weight+=[globalWeight]
                 machineid+=[globalMachine]
                 if timing==0:
-                    endtime+=[time.time()+washTime+timeOut]
+                    endtime+=[time()+washTime+timeOut]
                 else:
                     endtime+=[timing+washTime+timeOut]
             if studentid==None:    #if machine is empty, create the user list
@@ -403,7 +403,7 @@ class WashLoginScreen(MyScreen):
             if globalState==-1:    #if last user (washing machine starts wash immediately after this user), updates info accordingly
                 putState(globalMachine,door=1,state=-1,weight=globalWeight,studentid=studentid)
             elif getState(globalMachine,'state')==0:    #if first user, puts time of putting laundry and updates info accordingly
-                putState(globalMachine,door=1,state=time.time(),weight=globalWeight,studentid=studentid)
+                putState(globalMachine,door=1,state=time(),weight=globalWeight,studentid=studentid)
             else:    #if neither, keeps first user timing and updates rest of info accordingly
                 putState(globalMachine,door=1,weight=globalWeight,studentid=studentid)
             self.manager.current='wash'
@@ -434,15 +434,18 @@ class WashScreen(MyScreen):
     def on_enter(self):
         Clock.schedule_once(self.home,60)
         if globalState==-1:
-            Clock.schedule_once(self.dispense,1)
+            Clock.schedule_interval(self.dispense,1)
     def on_pre_leave(self):
         Clock.unschedule(self.home)
         Clock.unschedule(self.dispense)
+        ClearLEDs()
     def on_leave(self):
         self.washl.text=''
     def dispense(self,instance):    #tries to dispense soap until soap is dispensed (runs every 1s)
         if not self.dispensed:
             self.dispensed=Dispenser()
+        else:
+            ClearLEDs()
     def home(self,instance):
         self.manager.current='welcome'
 
@@ -480,7 +483,6 @@ class CollectLoginScreen(MyScreen):
     def login(self,instance):
         if verify(self.ut.text,self.pt.text):
             weight,machineid,endtime=getData(self.ut.text,['weight','machineid','endtime'])
-            timing,studentid=getState(globalMachine,['state','studentid'])
             if weight==None:    #if wash info is empty
                 global globalState
                 globalState='You do not have any laundry to collect'
@@ -646,7 +648,7 @@ class SignUpScreen(MyScreen):
             weight=[globalWeight]
             machineid=[globalMachine]
             if timing==0:
-                endtime=[time.time()+washTime+timeOut]
+                endtime=[time()+washTime+timeOut]
             else:
                 endtime=[timing+washTime+timeOut]
             if studentid==None:
@@ -657,7 +659,7 @@ class SignUpScreen(MyScreen):
             if globalState==-1:
                 putState(globalMachine,door=1,state=-1,weight=globalWeight,studentid=studentid)
             elif getState(globalMachine,'state')==0:
-                putState(globalMachine,door=1,state=time.time(),weight=globalWeight,studentid=studentid)
+                putState(globalMachine,door=1,state=time(),weight=globalWeight,studentid=studentid)
             else:
                 putState(globalMachine,door=1,weight=globalWeight,studentid=studentid)
             self.manager.current='contactbot'
@@ -713,7 +715,8 @@ class SwitchScreenApp(App):
             return sm
 
 if __name__== '__main__':
-#    initMachines(numOfMachines)
-    SwitchScreenApp().run()
-#    clearMachines()
+    try:
+        SwitchScreenApp().run()
+    except KeyboardInterrupt:
+        GPIO.cleanup()
     

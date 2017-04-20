@@ -1,5 +1,5 @@
 import RPi.GPIO as GPIO
-import time
+from ntptime import time
 from database import putState, getState
 from account import putData, getData
 import urllib2
@@ -44,7 +44,7 @@ class WashingMachine:
                         machineid, endtime = getData(student, ['machineid','endtime'])
                         for machine in range(len(machineid)):
                             if machineid[machine] == self.machine:
-                                endtime[machine]=time.time()+washTime
+                                endtime[machine]=time()+washTime
                         putData(student,endtime=endtime)
                         self.washing = True
 

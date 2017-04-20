@@ -4,7 +4,8 @@ from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 # Modules needed to open and access info from websites:
 import requests
 # Modules for processing that info:
-import time
+from time import sleep
+from ntptime import time
 from random import randint
 # Config for bot to run
 import config
@@ -153,7 +154,7 @@ def get_machineInfo(machineid):
 def get_time(userID,i):
     """Called when makeReply is getting washInfo, to get information on time remaining"""
     endTimeList = firebase.get('/Accounts/%s/endtime' %(str(userID)))
-    currentTime = time.time()
+    currentTime = time()
     #If endtime is not logged returns error
     if endTimeList == None:
         return None
@@ -225,4 +226,4 @@ if __name__ == '__main__':
     while True:
         print('Fetching updates...')
         checkMachines()
-        time.sleep(10)
+        sleep(10)
