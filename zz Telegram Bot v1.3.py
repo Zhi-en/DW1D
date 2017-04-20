@@ -1,4 +1,5 @@
 #Ver 1.3: Gets time from an NTP server instead of time.time
+#Ver 1.31: Removed * from wash complete reply
 # Modules needed for running Telegram bot:
 import telepot
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
@@ -153,7 +154,7 @@ def get_machineInfo(machineid):
     elif status == -1:
         statusStr = 'washing'
     elif status == -2:
-        statusStr = '* ready for collection *'
+        statusStr = 'ready for collection'
     else:
         statusStr = 'Machine not in use'
     return status,statusStr
