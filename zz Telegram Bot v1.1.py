@@ -114,12 +114,12 @@ def get_washInfo(userID,chatID,name):
 
 def makeReply(userID,machineid,i):
     """Called when creating a reply to the user, returns information in a string"""
-    status = get_machineInfo(machineid[i]) #get machine status
+    status,statusStr = get_machineInfo(machineid[i]) #get machine status (number and string)
     time = get_time(userID,i) #get time remaining
-    reply2 = 'Currently %s in Washing Machine %d' %(status,machineid[i])
+    reply2 = 'Currently %s in Washing Machine %d' %(statusStr,machineid[i])
     reply3 = 'Estimated time left: %r' %(time)
     
-    if time == 0:
+    if time == 0 or status == -2:
         reply = reply2 + '\n' + '\n'
     else:
         reply = reply2 + '\n' + reply3  + '\n'
@@ -131,14 +131,14 @@ def get_machineInfo(machineid):
     status = firebase.get('/washingmachine/%r/state' %(machineid))
     print "Machine %r status: %r" %(machineid,status) #for reference
     if status > 0:
-        status = 'pooling'
+        statusStr = 'pooling'
     elif status == -1:
-        status = 'washing'
+        statusStr = 'washing'
     elif status == -2:
-        status = '* ready for collection *'
+        statusStr = '* ready for collection *'
     else:
-        status = 'Machine not in use'
-    return status
+        statusStr = 'Machine not in use'
+    return status,statusStr
 
 def get_time(userID,i):
     """Called when makeReply is getting washInfo, to get information on time remaining"""
