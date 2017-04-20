@@ -1,3 +1,4 @@
+#Code taken from https://github.com/tatobari/hx711py
 import RPi.GPIO as GPIO
 import time
 import sys

@@ -1,95 +1,53 @@
 import time
-import json, urllib2
-
-
-class FirebaseApplication():
-	def __init__(self, url, token):
-		self.url=url
-		self.firebaseToken=token
-
-	def put(self, root,node, data):
-		json_url=self.url+root+node
-		opener = urllib2.build_opener(urllib2.HTTPHandler)
-		request = urllib2.Request(json_url+'.json?auth='+self.firebaseToken, 
-			data=json.dumps(data))
-
-		request.add_header('Content-Type', 'your/contenttype')
-		request.get_method = lambda: 'PUT'
-		result = opener.open(request)
-		if result.getcode()==200:
-			return "OK"
-		else:
-			return "ERROR"
-
-	def post(self, newnode, data):
-		json_url=self.url+newnode		
-		opener = urllib2.build_opener(urllib2.HTTPHandler)
-		request = urllib2.Request(json_url+'.json?auth='+self.firebaseToken, 
-			data=json.dumps(data))
-
-		request.add_header('Content-Type', 'your/contenttype')
-		request.get_method = lambda: 'POST'
-		result = opener.open(request)
-		if result.getcode()==200:
-			return "OK"
-		else:
-			return "ERROR"
-
-	def get(self, node):
-		json_url=self.url+node
-		opener = urllib2.build_opener(urllib2.HTTPHandler)
-		request = urllib2.Request(json_url+'.json?auth='+self.firebaseToken)
-		request.get_method = lambda: 'GET'
-		result = opener.open(request)
-		return json.loads(result.read())
-
+import firebase
 
 url = 'https://laundry-pool.firebaseio.com/'
 token = 'TVEKlcgHcA5QTWOrESZI8aocvLTwUX58BTjhHN1v'
-firebase = FirebaseApplication(url, token)
+firebase = firebase.FirebaseApplication(url, token)
 
 '''Legend:
     machine: machine number
     door: 0 is closed, 1 is input time openned
     state: 0 is empty, -1 is washing, -2 is collecting, for pooling: time first user placed laundry in
     weight: float value
+    studentid: list of users with laundry in machine
 '''
 
 
-def initMachines(number):
+def initMachines(number):    #creates the specified number of machines on firebase
     for machine in range(number + 1)[1:]:
         putState(machine, door = 0, state = 0, studentid = 'clear', weight = 'clear')
         firebase.put('/washingmachine/%d/' %(machine), 'id', machine)
 
 
-def clearMachines():
+def clearMachines():    #removes all machines from firebase
     for machine in firebase.get('/washingmachine/')[1:]:
         firebase.put('/washingmachine/', str(machine['id']), None)
 
 
-def putState(machine, door = None, state = None, weight = None, studentid = None):
+def putState(machine, door = None, state = None, weight = None, studentid = None):    #changes the attributes of the machines on firebase
     if door != None:
-        if door == 0:
+        if door == 0:    #0 is the command that door is closed
             firebase.put('/washingmachine/%d/' %(machine), 'door', door)
-        elif door == 1:
+        elif door == 1:    #1 is the command that door is opened and puts time of openning
             firebase.put('/washingmachine/%d/' %(machine), 'door', time.time())
     if state != None:
         firebase.put('/washingmachine/%d/' %(machine), 'state', state)
     if weight != None:
-        try:
+        try:    #accumulates weight if the type is correct, else clears all the weight
             weight += getState(machine, 'weight')
             firebase.put('/washingmachine/%d/' %(machine), 'weight', weight)
         except TypeError:
             firebase.put('/washingmachine/%d/' %(machine), 'weight', 0.0)
     if studentid != None:
-        if studentid == 'clear':
+        if studentid == 'clear':    #clears the list of studentids
             firebase.put('/washingmachine/%d/' %(machine), 'studentid', None)
-        else:
+        else:    #puts studentid list
             firebase.put('/washingmachine/%d/' %(machine), 'studentid', studentid)
 
 
-def getState(machine, item):
-    if type(item) is list:
+def getState(machine, item):    #gets the attributes of the machines from firebase
+    if type(item) is list:    #allows multiple values to be retrieved as a tuple
         outp = []
         for items in item:
             outp.append(firebase.get('/washingmachine/%d/%s' %(machine, items)))
@@ -108,15 +66,15 @@ def getDoor():
 def getWash(timeOut):
     for machine in firebase.get('/washingmachine/')[1:]:
         if machine['state'] > 0:
-            if time.time() - machine['state'] > timeOut:
+            if time.time() - machine['state'] > timeOut:    #if the laundry has been left in washing machine for too long, retrieves the washing machine number
                 return machine['id']
 
-def getMachine(weight, maxLoad, pfilled):    #to further improve, should incorporate time factor
+def getMachine(weight, maxLoad, pfilled):    #optimises machine to place laundry in by prioritising waiting time of users given several conditions
     idls = []
     weightls = []
     timels = []
     removels = []
-    for machine in firebase.get('/washingmachine/')[1:]:
+    for machine in firebase.get('/washingmachine/')[1:]:    #gets all the machines and their current laundry weights and time since first user placed laundry inside
         if machine['state'] >= 0:
             idls.append(machine['id'])
             weightls.append(machine['weight'])
@@ -139,16 +97,16 @@ def getMachine(weight, maxLoad, pfilled):    #to further improve, should incorpo
             weightls.remove(weightls[machine])
             idls.remove(idls[machine])
     if idls == []:
-        return 0, 'All washing machines are full\nSorry for the inconvenience caused'    #if all options removed due to overloading, all are full
+        return 0, 'All washing machines are full\nSorry for the inconvenience caused'    #if all options removed due to overloading, no machines available
     for machine in range(len(idls)):
-        if weightls[machine] != 0 and weightls[machine] + weight < 0.6*maxLoad:    #if lightest final load of at least 2 people's laundry is < 2/3 of maxLoad, place in that machine
+        if weightls[machine] != 0 and weightls[machine] + weight < 0.6*maxLoad:    #if final load of at least 2 people's laundry is < 2/3 of maxLoad, place in that machine
             return 0, idls[machine]
     for machine in range(len(idls)):
         if weightls[machine] + weight > (2*pfilled - 1)*maxLoad:    #if biggest final load is > 2pfilled - 1 of maxLoad, place in that machine and wash (equivalent losses to earnings of firt if statement better than starting a new machine)
             return -1, idls[machine]
     if weightls[-1] == 0:    #if there are empty machines, place laundry in them
         return 0, idls[-1]
-    else:    #if really no choice, just wash the biggest load
+    else:    #if really no choice, just wash the longest waiting load
         return -1, idls[0]
         
 

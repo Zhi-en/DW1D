@@ -1,121 +1,80 @@
-import time
-import json, urllib2
-
-
-class FirebaseApplication():
-	def __init__(self, url, token):
-		self.url=url
-		self.firebaseToken=token
-
-	def put(self, root,node, data):
-		json_url=self.url+root+node
-		opener = urllib2.build_opener(urllib2.HTTPHandler)
-		request = urllib2.Request(json_url+'.json?auth='+self.firebaseToken, 
-			data=json.dumps(data))
-
-		request.add_header('Content-Type', 'your/contenttype')
-		request.get_method = lambda: 'PUT'
-		result = opener.open(request)
-		if result.getcode()==200:
-			return "OK"
-		else:
-			return "ERROR"
-
-	def post(self, newnode, data):
-		json_url=self.url+newnode		
-		opener = urllib2.build_opener(urllib2.HTTPHandler)
-		request = urllib2.Request(json_url+'.json?auth='+self.firebaseToken, 
-			data=json.dumps(data))
-
-		request.add_header('Content-Type', 'your/contenttype')
-		request.get_method = lambda: 'POST'
-		result = opener.open(request)
-		if result.getcode()==200:
-			return "OK"
-		else:
-			return "ERROR"
-
-	def get(self, node):
-		json_url=self.url+node
-		opener = urllib2.build_opener(urllib2.HTTPHandler)
-		request = urllib2.Request(json_url+'.json?auth='+self.firebaseToken)
-		request.get_method = lambda: 'GET'
-		result = opener.open(request)
-		return json.loads(result.read())
+import firebase
 
 url = 'https://laundry-pool.firebaseio.com/' # URL to Firebase database
 token = 'TVEKlcgHcA5QTWOrESZI8aocvLTwUX58BTjhHN1v' # unique token used for authentication
-firebase = FirebaseApplication(url, token)
+firebase = firebase.FirebaseApplication(url, token)
 
 '''Legend:
-    Requires studentid,phone,password
-    weight = weight of laundry
-    fee = how much person has to pay
-    machineid = which washing machine person is assigned to
+    Requires studentid,password,phonenumber
+    weight = list containing weight of laundry
+    machineid = list containing which washing machine user has clothes in
+    endtime = list containing estimated time of completion of wash
+    debt = accumulated debt of users
+    pmstate = for telegrambot to use as timer for pm-ing users every 15min once laundry is ready for collection
 '''
  
-def createUser(studentid,password,phone):
+def createUser(studentid,password,phone):    #creates a user together with the required attributes
     firebase.put('/Accounts/%s/' %(studentid), 'studentid', studentid)
     firebase.put('/Accounts/%s/' %(studentid), 'password', password)
     firebase.put('/Accounts/%s/' %(studentid), 'phonenumber', phone)
     putData(studentid, debt = 'clear')  
 
-def getUsers():
+def getUsers():    #returns a list of userids
     return firebase.get('/Accounts/').keys()
 
-def resetUsers(studentid = None):
-    if studentid == None:
+def resetUsers(studentid = None):    #resets the attributes of users
+    if studentid == None:    #if no user input, resets all users
         for studentid in firebase.get('/Accounts/').keys():
             putData(studentid, weight = 'clear', machineid = 'clear', endtime = 'clear', debt = 'clear')
-    else:
-        putData(studentid, weight = 'clear', machineid = 'clear', endtime = 'clear', debt = 'clear')
+    elif type(studentid) is not list:    #converts inputs to list if not list
+        studentid = [studentid]
+    for student in studentid:    #clears all users in list
+        putData(student, weight = 'clear', machineid = 'clear', endtime = 'clear', debt = 'clear')
 
-def verify(studentid, password):
+def delUsers(studentid = None):    #deletes users
+    if studentid == None:    #if no user inpit, deletes all users
+        firebase.put('/Accounts/', '', None)
+    elif type(studentid) is not list:    #converts input to list if not list
+        studentid = [studentid]
+    for student in studentid:    #deletes all users in list
+        firebase.put('/Accounts/', str(student), None)
+
+def verify(studentid, password):    #checks if userid and password matches
     return getData(studentid, 'password') == password
 
-def putData(studentid, weight = None, machineid = None, endtime = None, debt = None, pmstate = None):
+def putData(studentid, weight = None, machineid = None, endtime = None, debt = None, pmstate = None):    #changes the attributes of users on firebase
     if weight != None:
-        if type(weight) is str:
+        if type(weight) is str:    #removes weight attribute (used for command 'clear')
             firebase.put('/Accounts/%s/' %(studentid), 'weight', None)
-        else:
+        else:    #puts weight list
             firebase.put('/Accounts/%s/' %(studentid), 'weight', weight)
     if machineid != None:
-        if type(machineid) is str:
+        if type(machineid) is str:    #removes machineid attribute
             firebase.put('/Accounts/%s/' %(studentid), 'machineid', None)
-        else:
+        else:    #puts machineid list
             firebase.put('/Accounts/%s/' %(studentid), 'machineid', machineid)
     if endtime != None:
-        if type(endtime) is str:
+        if type(endtime) is str:    #removes endtime list
             firebase.put('/Accounts/%s/' %(studentid), 'endtime', None)
-        else:
+        else:    #puts endtime list
             firebase.put('/Accounts/%s/' %(studentid), 'endtime', endtime)
     if debt != None:
-        try:
+        try:    #accumulates debt if the type is correct, else resets debt
             debt += getData(studentid, 'debt')
             firebase.put('/Accounts/%s/' %(studentid), 'debt', debt)
         except TypeError:
             firebase.put('/Accounts/%s/' %(studentid), 'debt', 0)
     if pmstate != None:
-        if type(pmstate) is str:
+        if type(pmstate) is str:    #removes pmstate attribute
             firebase.put('/Accounts/%s/' %(studentid), 'pmstate', None)
-        else:
+        else:    #puts pmstate
             firebase.put('/Accounts/%s/' %(studentid), 'pmstate', pmstate)
 
-def getData(studentid, item):
-    if type(item) is list:
+def getData(studentid, item):    #gets the attributs of users from firebase
+    if type(item) is list:    #allows multiple values to be retrieved as a tuple
         outp = []
         for items in item:
             outp.append(firebase.get('/Accounts/%s/%s' %(studentid, items)))
         return tuple(outp)
     else:
         return firebase.get('/Accounts/%s/%s' %(studentid, item))
-
-
-#studentid = '1001234'
-#phone = 98765432
-#password = '1234'
-#createUser(studentid,password,phone)
-#studentid = '1002175'
-#phone = 92365431
-#password = '1234'
-#createUser(studentid,password,phone)

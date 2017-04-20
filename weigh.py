@@ -8,7 +8,7 @@ class weighingScale(object):
         self.hx=HX711(dout,pdsck)
         self.maxLoad = maxLoad
     def tareScale(self):
-        offset = 8900000    #max offset allowed incase there is already laundry on the scale
+        offset = 8900000    #max offset allowed incase there is already laundry on the scale (calculated by adding about 700g*280 to offset without weight)
         ref = 280    #calibrated to return weight in grams
         self.hx.set_reading_format("LSB", "MSB")    #reading settings according to hx711 docs
         self.hx.set_reference_unit(ref)    #divides reading by ref, calibrated to return weight in grams
@@ -22,12 +22,12 @@ class weighingScale(object):
             self.hx.tare()
             return 'Please place laundry on the weighing scale'
     def getWeight(self):
-        minweight = 1000    #min weight needed to prevent 0 return when user takes time to place laundry on weighing scale
-        weight = self.hx.get_weight(10)
-        self.hx.reset
+        minweight = 500    #min weight of 500g needed for readings to start
+        weight = self.hx.get_weight(10)    #returns the average of 10 readings
+        self.hx.reset()
         if weight < minweight:
             return 'Please place laundry on the weighing scale'
-        elif weight > self.maxLoad*1000:
+        elif weight > self.maxLoad*1000:    #prevents overloading the washing machine
             return 'Your laundry load is too heavy, please wash in 2 loads'
         else:
             return weight/1000.0
@@ -35,7 +35,7 @@ class weighingScale(object):
         self.hx.power_down()
 
 
-def getCost(weight, maxLoad, fullCost, pfilled):    #returns cost of load for input weight
+def getCost(weight, maxLoad, fullCost, pfilled):    #returns cost of load for input weight calculated proportionally by weight where pfilled*maxLoad is fullcost since hitting that weight starts wash
     cost = round(weight/(pfilled*maxLoad)*fullCost,2)
     if cost > fullCost:
         cost = fullCost
