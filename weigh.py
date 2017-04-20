@@ -1,4 +1,3 @@
-#!/usr/bin/pythonimport
 from HX711 import HX711
 from time import sleep
 
