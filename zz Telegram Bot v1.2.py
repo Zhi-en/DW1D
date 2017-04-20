@@ -1,4 +1,4 @@
-#Ver 1.0: Launching Fully Functioning Bot
+#Ver 1.2: fixed a bug where bot would inform user that no wash is going on even if he entered ID that is no assigned to his chat ID
 # Modules needed for running Telegram bot:
 import telepot
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
@@ -101,27 +101,36 @@ def get_washInfo(userID,chatID,name):
             
     #If no machines under current user, returns an error message
     else:
+        #Gets userID from firebase
         userIDcheck = firebase.get('/Accounts/%s' %(userID))
+        #Gets the chat ID from firebase
+        chatIDcheck = firebase.get('/Accounts/%s/chatID' %(userID))
+        
         #checks if entered userID exists in database
         if userIDcheck == None:
             #Prints for our reference
             print "Invalid ID entered"
             reply = "Sorry, this ID is not registered. Please create and account."
-        else:
+        #checks if user ID matches chat ID
+        elif chatIDcheck == chatID:
             #Prints for our reference
             print "%r is not washing any laundry."%(chatID)
             reply = "Sorry %s, you are currently not washing any laundry :(" %(name)
+        #no match -> print error message
+        else:
+            #Prints for our reference
+            print "%r did not enter id tagged to him."%(chatID)
+            reply = "Sorry, please enter your own ID."
         bot.sendMessage(chatID,reply)
 
 def makeReply(userID,machineid,i):
     """Called when creating a reply to the user, returns information in a string"""
-    status = get_machineInfo(machineid[i]) #get machine status
+    status,statusStr = get_machineInfo(machineid[i]) #get machine status (number and string)
     time = get_time(userID,i) #get time remaining
-    reply2 = 'Currently %s in Washing Machine %d' %(status,machineid[i])
+    reply2 = 'Currently %s in Washing Machine %d' %(statusStr,machineid[i])
     reply3 = 'Estimated time left: %r' %(time)
     
-    if time == 0:
-        print 'time = 0'
+    if time == 0 or status == -2:
         reply = reply2 + '\n' + '\n'
     else:
         reply = reply2 + '\n' + reply3  + '\n'
@@ -133,14 +142,14 @@ def get_machineInfo(machineid):
     status = firebase.get('/washingmachine/%r/state' %(machineid))
     print "Machine %r status: %r" %(machineid,status) #for reference
     if status > 0:
-        status = 'pooling'
+        statusStr = 'pooling'
     elif status == -1:
-        status = 'washing'
+        statusStr = 'washing'
     elif status == -2:
-        status = '* ready for collection *'
+        statusStr = '* ready for collection *'
     else:
-        status = 'Machine not in use'
-    return status
+        statusStr = 'Machine not in use'
+    return status,statusStr
 
 def get_time(userID,i):
     """Called when makeReply is getting washInfo, to get information on time remaining"""

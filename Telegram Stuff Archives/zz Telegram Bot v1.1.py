@@ -1,3 +1,4 @@
+#Ver 1.1: Fixed a bug where bot still shows time remaining even after wash is completed (usually for forced completion
 # Modules needed for running Telegram bot:
 import telepot
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
