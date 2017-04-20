@@ -57,7 +57,7 @@ def Dispenser():        #Distance = distance read from sonar, inp = dispense com
         GPIO.output(GPIO_Red, GPIO.LOW)     #Red LED Turns off
         pwm.start(99)     #complete revolutions at fixed speed for 3 secs
         GPIO.output(GPIO_Green, GPIO.HIGH)
-        print "Container Present, Dispensing"
+#        print "Container Present, Dispensing"
         time.sleep(3)
         GPIO.output(GPIO_Green, GPIO.LOW)
         pwm.stop()

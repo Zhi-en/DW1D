@@ -100,16 +100,26 @@ def get_washInfo(userID,chatID,name):
             
     #If no machines under current user, returns an error message
     else:
+        #Gets userID from firebase
         userIDcheck = firebase.get('/Accounts/%s' %(userID))
+        #Gets the chat ID from firebase
+        chatIDcheck = firebase.get('/Accounts/%s/chatID' %(userID))
+        
         #checks if entered userID exists in database
         if userIDcheck == None:
             #Prints for our reference
             print "Invalid ID entered"
             reply = "Sorry, this ID is not registered. Please create and account."
-        else:
+        #checks if user ID matches chat ID
+        elif chatIDcheck == chatID:
             #Prints for our reference
             print "%r is not washing any laundry."%(chatID)
             reply = "Sorry %s, you are currently not washing any laundry :(" %(name)
+        #no match -> print error message
+        else:
+            #Prints for our reference
+            print "%r did not enter id tagged to him."%(chatID)
+            reply = "Sorry, please enter your own ID."
         bot.sendMessage(chatID,reply)
 
 def makeReply(userID,machineid,i):

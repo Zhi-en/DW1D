@@ -1,3 +1,15 @@
+'''To run on computer:
+    Comment out the following:
+        import RPi.GPIO as GPIO
+        from weigh import weighingScale
+        from soap import Dispenser
+        GPIO.setmode(GPIO.BCM)
+        ws = weighingScale(dout, pdsck, maxLoad)
+    in weigh.py, comment out:
+        from HX711 import HX711
+    Uncomment all functions under placeholder functions
+'''
+
 #import raspi/python functions
 import RPi.GPIO as GPIO
 import time
@@ -11,13 +23,8 @@ from database import initMachines, clearMachines, putState, getState, getMachine
 
 #import kivy functions
 from kivy.app import App
-from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
-from kivy.uix.widget import Widget
-from kivy.uix.button import Button
 from kivy.uix.label import Label
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.textinput import TextInput
 from kivy.clock import Clock
@@ -25,9 +32,9 @@ from kivy.uix.image import Image
 from kivy.uix.behaviors import ButtonBehavior
 
 #Configure window size to pi screen size for testing on computer
-#from kivy.config import Config
-#Config.set('graphics', 'width', '800')
-#Config.set('graphics', 'height', '480')
+from kivy.config import Config
+Config.set('graphics', 'width', '800')
+Config.set('graphics', 'height', '480')
 
 #Setup font
 from kivy.core.text import LabelBase  
@@ -49,42 +56,43 @@ pfilled = 0.9    #approximately how full the washing machine should be to wash, 
 ws = weighingScale(dout, pdsck, maxLoad)
 
 #variable global variables
-globalWeight = 0
-globalCost = 0
-globalMachine = 0
-globalState = 0
-screenStart = 0
+globalWeight = 0    #weight of laundry
+globalCost = 0    #cost of wash
+globalMachine = 0    #washing machine number
+globalState = 0    #0 if insufficient load to wash, 1 if sufficient, used to pass strings for collection
 
 
-#placeholder functions TO BE REPLACED WITH ACTUAL CODE
+#placeholder functions
 #class weighingScale(object):
 #    def tareScale(self): #Tares the load cell
 #        return 'Please place laundry on the weighing scale'
 #    def getWeight(self): #gets the weight of clothes
-#        weight = ((time.time())/60)%10 #replace with actual weight code
+#        weight = ((time.time())/60)%10    #gives a variable weight based on time
 #        return weight
 #ws = weighingScale()
-
+#
+#def Dispenser():
+#    return True
 
 #Kivy custom widgets/functions, standardise look across app
-def resetVar():
+def resetVar():    #resets all variable global variables
     global globalWeight
     global globalCost
     global globalMachine
     global globalState
-    globalWeight = 0    #weight of laundry
-    globalCost = 0    #cost of wash
-    globalMachine = 0    #washing machine number
-    globalState = 0    #0 if insufficient load to wash, 1 if sufficient
+    globalWeight = 0
+    globalCost = 0
+    globalMachine = 0
+    globalState = 0
 
-class MyLabel(Label):
+class MyLabel(Label):    #creates personalised label function
     def __init__(self,**kwargs):
         Label.__init__(self,**kwargs)
         self.font_name='HVD'
         self.color=(0,0,0,1)
         self.halign='center'
 
-class MyScreen(Screen):
+class MyScreen(Screen):    #creates personalised screen function
     def __init__(self,**kwargs):
         Screen.__init__(self,**kwargs)
         self.layout=FloatLayout() #set layout
@@ -106,7 +114,7 @@ class RightLabel(MyLabel):
         self.font_size=40
         self.color=(1,1,1,1)
 
-class HomeButton(ButtonBehavior,Image):
+class HomeButton(ButtonBehavior,Image):    #creates personalised home button by giving button behavior to an image
     def __init__(self,**kwargs):
         Image.__init__(self,**kwargs)
         ButtonBehavior.__init__(self,**kwargs)
@@ -114,7 +122,7 @@ class HomeButton(ButtonBehavior,Image):
         self.pos=(10,10)
         self.size_hint=(0.09,0.15)
 
-class BackButton(ButtonBehavior,Image):
+class BackButton(ButtonBehavior,Image):    #creates personalised back button
     def __init__(self,**kwargs):
         Image.__init__(self,**kwargs)
         ButtonBehavior.__init__(self,**kwargs)
@@ -138,7 +146,7 @@ class RightButton(ButtonBehavior,Image):
         self.pos_hint={'center_x':0.72,'center_y':0.55}
         self.size_hint=(0.35,0.25)
 
-class MyButton(ButtonBehavior,Image):
+class MyButton(ButtonBehavior,Image):    #creates personalised button
     def __init__(self,**kwargs):
         Image.__init__(self,**kwargs)
         ButtonBehavior.__init__(self,**kwargs)
@@ -148,8 +156,8 @@ class MyButton(ButtonBehavior,Image):
 #Kivy screen classes
 class WelcomeScreen(Screen):
     def __init__(self, **kwargs):
-        super(WelcomeScreen, self).__init__(**kwargs)   
-        self.layout=FloatLayout(on_touch_down=self.nextscreen) #touch screen to go to wash or collect screen
+        super(WelcomeScreen, self).__init__(**kwargs)    #initialise the attributes of the parent class
+        self.layout=FloatLayout(on_touch_down=self.nextscreen)    #touch screen to go to next screen
         self.add_widget(self.layout)
         background=Image(source='icons/background1.jpg')
         ml=MyLabel(text='Laundry Pool',font_size=70,pos_hint={'center_x':0.33,'center_y':0.75})
@@ -161,14 +169,14 @@ class WelcomeScreen(Screen):
         self.layout.add_widget(self.close)
     def on_pre_enter(self):
         resetVar()
-        Clock.schedule_interval(self.checks,10)
-        Clock.schedule_interval(self.flash,1)
+        Clock.schedule_interval(self.checks,10)    #runes check every 10 seconds
+        Clock.schedule_interval(self.flash,1)    #flashes the label <touch screen to start> every second
     def on_pre_leave(self):
         Clock.unschedule(self.checks)
         Clock.unschedule(self.flash)
-    def nextscreen(self,*args): #function to go to next screen
+    def nextscreen(self,*args):    #function to go to next screen
         self.manager.current = 'washorcollect'
-    def checks(self,instance): #checks if all doors are closed (if not, go to the close door screen) and pooling time does not exceed timeOut
+    def checks(self,instance):    #checks if all doors are closed (if not, go to the close door screen) and checks if pooling time does not exceed timeOut (start wash once exceeds)
         if getWash(timeOut)!=None:
             putState(getWash(timeOut),state=-1)
         if getDoor()!=None:
@@ -176,24 +184,24 @@ class WelcomeScreen(Screen):
         else:
             return self.closed(instance)
     def flash(self,instance):
-        if self.sl.color==[0,0,0,0]:
+        if self.sl.color==[0,0,0,0]:    #if transparent, make it opaque
             self.sl.color=(0,0,0,1)
         else:
-            self.sl.color=(0,0,0,0)
+            self.sl.color=(0,0,0,0)    #last digit 0 makes it transparent
     def door(self,instance):
-        Clock.unschedule(self.flash)
+        Clock.unschedule(self.flash)    #if door is not closed, stoped flashing <touch screen to start> and hides it
         self.sl.color=(0,0,0,0)
-        self.close.text='Please close the door of\nWashing Machine %d'%(getDoor())
+        self.close.text='Please close the door of\nWashing Machine %d'%(getDoor())    #displays which washing machine's door to close
         self.layout.on_touch_down=self.closed
     def closed(self,instance):
-        Clock.schedule_interval(self.flash,1)
+        Clock.schedule_interval(self.flash,1)    #once door is closed, retarts flashing <touch screen to start>
         self.close.text=''
         self.layout.on_touch_down=self.nextscreen
 
-class WashOrCollectScreen(MyScreen): #prompt the user whether he/she wants to wash or collect
+class WashOrCollectScreen(MyScreen):    #prompt the user to wash or collect
     def __init__(self, **kwargs):
-        super(WashOrCollectScreen, self).__init__(**kwargs) #initialise the attributes of the parent class
-        lb=LeftButton(on_press=self.wash)
+        super(WashOrCollectScreen, self).__init__(**kwargs)
+        lb=LeftButton(on_press=self.wash)    #adding the custom buttons and labels for them
         ll=LeftLabel(text='Wash')
         rb=RightButton(on_press=self.collect)
         rl=RightLabel(text='Collect')
@@ -220,7 +228,7 @@ class WashOrCollectScreen(MyScreen): #prompt the user whether he/she wants to wa
 
 class PoolOrPrivateScreen(MyScreen):
     def __init__(self, **kwargs):
-        super(PoolOrPrivateScreen, self).__init__(**kwargs) #initialise the attributes of the parent class
+        super(PoolOrPrivateScreen, self).__init__(**kwargs)
         lb=LeftButton(on_press=self.pool)
         ll=LeftLabel(text='Pool')
         rb=RightButton(on_press=self.private)
@@ -241,7 +249,7 @@ class PoolOrPrivateScreen(MyScreen):
         self.manager.current='weigh'
     def private(self,instance):
         global globalWeight
-        globalWeight=maxLoad
+        globalWeight=maxLoad    #private was is equivalent of washing maximum loads
         self.manager.current='washlogin'
     def home(self,instance):
         self.manager.current='welcome'
@@ -251,8 +259,8 @@ class PoolOrPrivateScreen(MyScreen):
 class WeighScreen(MyScreen):
     def __init__(self, **kwargs):
         super(WeighScreen, self).__init__(**kwargs)        
-        self.weightl=MyLabel(text='',font_size=25,pos_hint={'center_x':0.5,'center_y':0.8}) #Label displays weight/instructions for user
-        self.proceedb=MyButton(on_press=self.proceed,disabled=True,pos_hint={'center_x':0.5,'center_y':0.33}) #Button to continue to next screen, only activated there is a weight measured
+        self.weightl=MyLabel(text='',font_size=25,pos_hint={'center_x':0.5,'center_y':0.8})    #displays weight/instructions for user
+        self.proceedb=MyButton(on_press=self.proceed,disabled=True,pos_hint={'center_x':0.5,'center_y':0.33})    #continue to next screen, only enabled when there is weight measured
         proceedl=MyLabel(text='Proceed',font_size=25,pos_hint={'center_x':0.5,'center_y':0.33})
         proceedl.color=(1,1,1,1)
         homeb=HomeButton(on_press=self.home)
@@ -265,12 +273,12 @@ class WeighScreen(MyScreen):
     def on_pre_enter(self):
         self.weightl.text=str(ws.tareScale())
     def on_enter(self):
-        Clock.schedule_interval(self.weigh,0.1)
+        Clock.schedule_interval(self.weigh,0.1)    #calls functions to get weight every 0.1s
         Clock.schedule_once(self.home,2*60)
     def on_pre_leave(self):
         Clock.unschedule(self.weigh)
         Clock.unschedule(self.home)
-    def on_leave(self):
+    def on_leave(self):    #resets screen to original set-up
         self.weightl.text=''
         self.weightl.font_size=25
         self.proceedb.disabled=True
@@ -280,14 +288,14 @@ class WeighScreen(MyScreen):
         elif self.weightl.text=='Please place laundry on the weighing scale':
             weight = ws.getWeight()
             if type(weight) is float:
-                self.weightl.font_size=50
+                self.weightl.font_size=50    #weight displays are larger than instructions
                 self.weightl.text='Weight: %.2fkg'%(weight)
             else:
                 self.weightl.text=str(weight)
         else:
             weight=ws.getWeight()
             if type(weight) is float:
-                delta=100    #allowable difference in value range to ensure stable weight returned
+                delta=0.5    #allowable difference in value range to ensure stable weight returned
                 weightls=[0 for i in range(5)]
                 count=0
                 weightls[count]=weight
@@ -300,7 +308,7 @@ class WeighScreen(MyScreen):
                     globalWeight = weight
                     self.proceedb.disabled=False
             else:
-                self.weightl.font_size=25
+                self.weightl.font_size=25    #if weight drops below 1kg, instructions are returned instead
                 self.weightl.text=str(weight)
     def proceed(self,instance):
         self.manager.current='washlogin'
@@ -313,16 +321,16 @@ class WeighScreen(MyScreen):
 class WashLoginScreen(MyScreen):
     def __init__(self, **kwargs):
         super(WashLoginScreen, self).__init__(**kwargs)
-        self.costl=MyLabel(text='',font_size=50,pos_hint={'center_x':0.5,'center_y':0.80}) #Label that displays costs to be paid
-        self.fail=MyLabel(text='',font_size=25,pos_hint={'center_x':0.5,'center_y':0.65}) #Label that appears when wrong userid/password is input
-        ul=MyLabel(text='Student ID',font_size=25,pos_hint={'center_x':0.3,'center_y':0.54})
-        self.ut=TextInput(pos_hint={'center_x':0.7,'center_y':0.54},size_hint=(0.4,0.07),multiline=False,write_tab=False,on_text_validate=self.login) #write_tab and on_text_validate enable use of tab to go to next text field and enter to return a function
+        self.costl=MyLabel(text='',font_size=50,pos_hint={'center_x':0.5,'center_y':0.80})    #Label that displays costs to be paid
+        self.fail=MyLabel(text='',font_size=25,pos_hint={'center_x':0.5,'center_y':0.65})    #Label that appears when wrong userid/password is input
+        ul=MyLabel(text='Student ID',font_size=25,pos_hint={'center_x':0.3,'center_y':0.54})    #UserID and Password format
+        self.ut=TextInput(pos_hint={'center_x':0.7,'center_y':0.54},size_hint=(0.4,0.07),multiline=False,write_tab=False,on_text_validate=self.login)    #write_tab and on_text_validate enable use of tab to go to next text field and enter to return a function
         pl=MyLabel(text='Password',font_size=25,pos_hint={'center_x':0.3,'center_y':0.46})
         self.pt=TextInput(pos_hint={'center_x':0.7,'center_y':0.46},size_hint=(0.4,0.07),multiline=False,write_tab=False,on_text_validate=self.login,password=True)
-        self.lb=MyButton(pos_hint={'center_x':0.7,'center_y':0.25},on_press=self.login)
+        self.lb=MyButton(pos_hint={'center_x':0.7,'center_y':0.25},on_press=self.login)    #login button
         ll=MyLabel(text='Login',font_size=25,pos_hint={'center_x':0.7,'center_y':0.25})
         ll.color=(1,1,1,1)
-        sb=MyButton(pos_hint={'center_x':0.3,'center_y':0.25},on_press=self.signup)
+        self.sb=MyButton(pos_hint={'center_x':0.3,'center_y':0.25},on_press=self.signup)    #sign up button
         sl=MyLabel(text='Sign up',font_size=25,pos_hint={'center_x':0.3,'center_y':0.25})
         sl.color=(1,1,1,1)
         homeb=HomeButton(on_press=self.home)
@@ -331,12 +339,12 @@ class WashLoginScreen(MyScreen):
         self.layout.add_widget(self.fail)
         self.layout.add_widget(ul)
         self.layout.add_widget(self.ut)
-        self.ut.focus=True
+        self.ut.focus=True    #selects text field input
         self.layout.add_widget(pl)
         self.layout.add_widget(self.pt)
         self.layout.add_widget(self.lb)
         self.layout.add_widget(ll)
-        self.layout.add_widget(sb)
+        self.layout.add_widget(self.sb)
         self.layout.add_widget(sl)
         self.layout.add_widget(homeb)
         self.layout.add_widget(backb)
@@ -344,13 +352,14 @@ class WashLoginScreen(MyScreen):
         global globalCost
         global globalMachine
         global globalState
-        globalCost=getCost(globalWeight,maxLoad,fullCost,pfilled)
-        globalState,globalMachine = getMachine(globalWeight,maxLoad,pfilled)
+        globalCost=getCost(globalWeight,maxLoad,fullCost,pfilled)    #calculates cost based on weight and weight-cost ratio
+        globalState,globalMachine = getMachine(globalWeight,maxLoad,pfilled)    #determines which washing machine to use and if it should wash or wait for more laundry
         if type(globalMachine) is int:
             self.costl.text='Cost: $%.2f' %(globalCost)
-        else:
+        else:    #if all machines are full/used
+            self.costl.font_size=30
             self.costl.text=str(globalMachine)
-            self.lb.disabled=True
+            self.lb.disabled=True    #disables the textfields and buttons
             self.sb.disabled=True
             self.ut.disabled=True
             self.pt.disabled=True
@@ -363,37 +372,39 @@ class WashLoginScreen(MyScreen):
         self.ut.text=''
         self.pt.text=''
         self.fail.text=''
+        self.costl.font_size=50
         self.lb.disabled=False
+        self.sb.disabled=False
         self.ut.disabled=False
         self.pt.disabled=False
     def login(self,instance):
-        if verify(self.ut.text,self.pt.text):
-            weight,machineid,endtime=getData(self.ut.text,['weight','machineid','endtime'])
-            timing,studentid=getState(globalMachine,['state','studentid'])
-            if weight==None:
+        if verify(self.ut.text,self.pt.text):    #if userID and passwords match
+            weight,machineid,endtime=getData(self.ut.text,['weight','machineid','endtime'])    #gets current wash info of the user
+            timing,studentid=getState(globalMachine,['state','studentid'])    #gets current userids and state of washing machine
+            if weight==None:    #if user has no current washes
                 weight=[globalWeight]
                 machineid=[globalMachine]
-                if timing==0:
+                if timing==0:    #of no laudry in the machine, puts time of putting laundry
                     endtime=[time.time()+washTime+timeOut]
-                else:
+                else:    #uses the first user's time of putting laundry
                     endtime=[timing+washTime+timeOut]
-            else:
+            else:    #adds new wash info to current washes
                 weight+=[globalWeight]
                 machineid+=[globalMachine]
                 if timing==0:
                     endtime+=[time.time()+washTime+timeOut]
                 else:
                     endtime+=[timing+washTime+timeOut]
-            if studentid==None:
+            if studentid==None:    #if machine is empty, create the user list
                 studentid=[self.ut.text]
-            else:
+            else:    #add user info to user list
                 studentid+=[self.ut.text]
-            putData(self.ut.text,weight=weight,machineid=machineid,endtime=endtime,debt=globalCost,pmstate=0)
-            if globalState==-1:
+            putData(self.ut.text,weight=weight,machineid=machineid,endtime=endtime,debt=globalCost,pmstate=0)    #updates users data to firebase
+            if globalState==-1:    #if last user (washing machine starts wash immediately after this user), updates info accordingly
                 putState(globalMachine,door=1,state=-1,weight=globalWeight,studentid=studentid)
-            elif getState(globalMachine,'state')==0:
+            elif getState(globalMachine,'state')==0:    #if first user, puts time of putting laundry and updates info accordingly
                 putState(globalMachine,door=1,state=time.time(),weight=globalWeight,studentid=studentid)
-            else:
+            else:    #if neither, keeps first user timing and updates rest of info accordingly
                 putState(globalMachine,door=1,weight=globalWeight,studentid=studentid)
             self.manager.current='wash'
         else:
@@ -410,36 +421,37 @@ class WashLoginScreen(MyScreen):
 class WashScreen(MyScreen):
     def __init__(self, **kwargs):
         super(WashScreen, self).__init__(**kwargs)
-        self.washl=MyLabel(text='',font_size=35) #tells user which washing machine to place laundry in
+        self.washl=MyLabel(text='',font_size=35)    #tells user which washing machine to place laundry in
         homeb=HomeButton(on_press=self.home)
         self.layout.add_widget(self.washl)
         self.layout.add_widget(homeb)
+        self.dispensed=False
     def on_pre_enter(self):
-        if globalState==-1:
+        if globalState==-1:    #last user, dispense soap
             self.washl.text='Please place your laundry\nin Washing Machine %d and\nCollect soap from the dispenser' %(globalMachine)
         else:
             self.washl.text='Please place your laundry\nin Washing Machine %d' %(globalMachine)
     def on_enter(self):
         Clock.schedule_once(self.home,60)
-        Clock.schedule_once(self.dispense,3)
+        if globalState==-1:
+            Clock.schedule_once(self.dispense,1)
     def on_pre_leave(self):
         Clock.unschedule(self.home)
         Clock.unschedule(self.dispense)
     def on_leave(self):
         self.washl.text=''
-    def dispense(self,instance):
-        dispensed=False
-        while not dispensed:
-            dispensed=Dispenser()
+    def dispense(self,instance):    #tries to dispense soap until soap is dispensed (runs every 1s)
+        if not self.dispensed:
+            self.dispensed=Dispenser()
     def home(self,instance):
         self.manager.current='welcome'
 
 class CollectLoginScreen(MyScreen):
     def __init__(self, **kwargs):
         super(CollectLoginScreen, self).__init__(**kwargs)
-        self.fail=MyLabel(text='',font_size=25,pos_hint={'center_x':0.5,'center_y':0.65}) #Label that appears when wrong userid/password is input
+        self.fail=MyLabel(text='',font_size=25,pos_hint={'center_x':0.5,'center_y':0.65})
         ul=MyLabel(text='Student ID',font_size=25,pos_hint={'center_x':0.3,'center_y':0.54})
-        self.ut=TextInput(pos_hint={'center_x':0.7,'center_y':0.54},size_hint=(0.4,0.07),multiline=False,write_tab=False,on_text_validate=self.login) #write_tab and on_text_validate enable use of tab to go to next text field and enter to return a function
+        self.ut=TextInput(pos_hint={'center_x':0.7,'center_y':0.54},size_hint=(0.4,0.07),multiline=False,write_tab=False,on_text_validate=self.login)
         pl=MyLabel(text='Password',font_size=25,pos_hint={'center_x':0.3,'center_y':0.46})
         self.pt=TextInput(pos_hint={'center_x':0.7,'center_y':0.46},size_hint=(0.4,0.07),multiline=False,write_tab=False,on_text_validate=self.login,password=True)
         lb=MyButton(pos_hint={'center_x':0.5,'center_y':0.25},on_press=self.login)
@@ -469,7 +481,7 @@ class CollectLoginScreen(MyScreen):
         if verify(self.ut.text,self.pt.text):
             weight,machineid,endtime=getData(self.ut.text,['weight','machineid','endtime'])
             timing,studentid=getState(globalMachine,['state','studentid'])
-            if weight==None:
+            if weight==None:    #if wash info is empty
                 global globalState
                 globalState='You do not have any laundry to collect'
                 self.manager.current='nocollect'
@@ -479,19 +491,19 @@ class CollectLoginScreen(MyScreen):
                 for machine in range(len(machineid)):
                     if getState(machineid[machine],'state')==-2:
                         machinels.append(machine)
-                if machinels==[]:
+                if machinels==[]:    #if none of the washing machines the user has laundry in is ready
                     global globalState
                     globalState='Your laundry is not ready for collection'
                     self.manager.current='nocollect'
                     return None
                 weightls=[]
                 machineidls=[]
-                for machine in sorted(machinels,reverse=True):
+                for machine in sorted(machinels,reverse=True):    #removed ready wash data and puts it into new lists
                     weightls.append(weight.pop(machine))
                     machineidls.append(machineid.pop(machine))
                     endtime.pop(machine)
-                putData(self.ut.text,machineid=machineid,weight=weight,endtime=endtime)
-                for machine in range(len(machineidls)):
+                putData(self.ut.text,machineid=machineid,weight=weight,endtime=endtime)    #returns not ready wash data back to firebase
+                for machine in range(len(machineidls)):    #uses ready wash data to update washing machine status
                     studentid=getState(machineidls[machine],'studentid')
                     try:
                         studentid.remove(self.ut.text)
@@ -502,7 +514,7 @@ class CollectLoginScreen(MyScreen):
                     else:
                         putState(machineidls[machine],door=1,weight=-weightls[machine],studentid=studentid)
                 global globalMachine
-                globalMachine = list(set(machineidls))
+                globalMachine = list(set(machineidls))    #puts list of washing machines with user's laundry ready for collection
                 self.manager.current='collect'
         else:
             self.ut.text=''
@@ -516,12 +528,12 @@ class CollectLoginScreen(MyScreen):
 class CollectScreen(MyScreen):
     def __init__(self, **kwargs):
         super(CollectScreen, self).__init__(**kwargs)
-        self.collect=MyLabel(text='',font_size=35) #tells user which washing machine to take laundry from
+        self.collect=MyLabel(text='',font_size=35)    #tells user which washing machine to take laundry from
         homeb=HomeButton(on_press=self.home)
         self.layout.add_widget(self.collect)
         self.layout.add_widget(homeb)
     def on_pre_enter(self):
-        if len(globalMachine)>1:
+        if len(globalMachine)>1:    #adds an s and commas for more than 1 machine
             machine=', '.join(str(i) for i in globalMachine)
             machine='s '+machine
         else:
@@ -541,7 +553,7 @@ class CollectScreen(MyScreen):
 class NoCollectScreen(MyScreen):
     def __init__(self, **kwargs):
         super(NoCollectScreen, self).__init__(**kwargs)
-        self.collect=MyLabel(text='',font_size=35)
+        self.collect=MyLabel(text='',font_size=35)    #tells user why there is no laundry to collect
         homeb=HomeButton(on_press=self.home)
         backb=BackButton(on_press=self.back)
         self.layout.add_widget(self.collect)
@@ -603,19 +615,23 @@ class SignUpScreen(MyScreen):
         self.cpt.text=''
         self.fail.text=''
     def signup(self,instance):
-        if self.ut.text in getUsers():
+        if not (self.ut.text.isdigit() and len(self.ut.text)==7):    #checks validity of student ID
+            self.fail.text='Invalid Student ID'
+            self.ut.text=''
+            self.ut.focus=True
+        elif self.ut.text in getUsers():    #checks if student ID is already in system
             self.fail.text='Student ID already in use, please choose another'
             self.ut.text=''
             self.ut.focus=True
-        elif self.pt.text!=self.cpt.text:
+        elif self.pt.text!=self.cpt.text:    #checks for matching passwords
             self.fail.text='Passwords do not match'
             self.pt.text=''
             self.cpt.text=''
             self.pt.focus=True
-        elif not (self.ct.text.isdigit() and len(self.ct.text)==8):
+        elif not (self.ct.text.isdigit() and len(self.ct.text)==8):    #checks validity of hp number
             self.fail.text='Invalid Handphone Number'
             self.ct.focus=True
-        elif self.ct.text=='':
+        elif self.ct.text=='':    #checks for empty fields
             self.fail.text='Please key in your Handphone Number\nso we can contact you for laundry collection'
             self.ct.focus=True
         elif self.ut.text=='':
@@ -625,7 +641,7 @@ class SignUpScreen(MyScreen):
             self.fail.text='Please key in your password'
             self.pt.focus=True
         else:
-            createUser(self.ut.text,self.pt.text,int(self.ct.text))
+            createUser(self.ut.text,self.pt.text,int(self.ct.text))    #creates the user on firebase
             timing,studentid=getState(globalMachine,['state','studentid'])
             weight=[globalWeight]
             machineid=[globalMachine]
@@ -650,13 +666,13 @@ class SignUpScreen(MyScreen):
     def back(self,instance):
         self.manager.current='washlogin'
 
-class ContactBotScreen(MyScreen):
+class ContactBotScreen(MyScreen):    #tells user to add the laundry pool bot on telegram
     def __init__(self, **kwargs):
         super(ContactBotScreen, self).__init__(**kwargs)
-        ml=MyLabel(text='To receive notifications when\nlaundry is ready for collection\nplease start chat with\nSUTD_LaundryPool on Telegram',font_size=30)
+        ml=MyLabel(text='To receive notifications when\nlaundry is ready for collection\nplease start chat with\nSUTD_LaundryPool on Telegram',font_size=25,pos_hint={'center_x':0.5,'center_y':0.7})
         pb=MyButton(on_press=self.proceed,pos_hint={'center_x':0.5,'center_y':0.33})
-        pl=MyLabel(text='Proceed',pos_hint={'center_x':0.5,'center_y':0.33})
-        pl.color=(1,1,1,0)
+        pl=MyLabel(text='Proceed',font_size=25,pos_hint={'center_x':0.5,'center_y':0.33})
+        pl.color=(1,1,1,1)
         self.layout.add_widget(ml)
         self.layout.add_widget(pb)
         self.layout.add_widget(pl)
