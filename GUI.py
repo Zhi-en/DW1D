@@ -13,6 +13,7 @@
 #import raspi/python functions
 import RPi.GPIO as GPIO
 from ntptime import time
+from Hash import Hash
 
 #import 1D functions
 from weigh import weighingScale
@@ -323,6 +324,7 @@ class WashLoginScreen(MyScreen):
         super(WashLoginScreen, self).__init__(**kwargs)
         self.costl=MyLabel(text='',font_size=50,pos_hint={'center_x':0.5,'center_y':0.80})    #Label that displays costs to be paid
         self.fail=MyLabel(text='',font_size=25,pos_hint={'center_x':0.5,'center_y':0.65})    #Label that appears when wrong userid/password is input
+        self.fail.color=(1,0,0,1)
         ul=MyLabel(text='Student ID',font_size=25,pos_hint={'center_x':0.3,'center_y':0.54})    #UserID and Password format
         self.ut=TextInput(pos_hint={'center_x':0.7,'center_y':0.54},size_hint=(0.4,0.07),multiline=False,write_tab=False,on_text_validate=self.login)    #write_tab and on_text_validate enable use of tab to go to next text field and enter to return a function
         pl=MyLabel(text='Password',font_size=25,pos_hint={'center_x':0.3,'center_y':0.46})
@@ -364,7 +366,7 @@ class WashLoginScreen(MyScreen):
             self.ut.disabled=True
             self.pt.disabled=True
     def on_enter(self):
-        Clock.schedule_once(self.home,60)
+        Clock.schedule_once(self.home,2*60)
     def on_pre_leave(self):
         Clock.unschedule(self.home)
     def on_leave(self):
@@ -378,7 +380,7 @@ class WashLoginScreen(MyScreen):
         self.ut.disabled=False
         self.pt.disabled=False
     def login(self,instance):
-        if verify(self.ut.text,self.pt.text):    #if userID and passwords match
+        if verify(self.ut.text,Hash(self.pt.text)):    #if userID and passwords match
             weight,machineid,endtime=getData(self.ut.text,['weight','machineid','endtime'])    #gets current wash info of the user
             timing,studentid=getState(globalMachine,['state','studentid'])    #gets current userids and state of washing machine
             if weight==None:    #if user has no current washes
@@ -432,13 +434,16 @@ class WashScreen(MyScreen):
         else:
             self.washl.text='Please place your laundry\nin Washing Machine %d' %(globalMachine)
     def on_enter(self):
-        Clock.schedule_once(self.home,60)
         if globalState==-1:
+            Clock.schedule_once(self.home,60)
             Clock.schedule_interval(self.dispense,1)
+        else:
+            Clock.schedule_once(self.home,30)
     def on_pre_leave(self):
         Clock.unschedule(self.home)
         Clock.unschedule(self.dispense)
         ClearLEDs()
+        self.dispensed=False
     def on_leave(self):
         self.washl.text=''
     def dispense(self,instance):    #tries to dispense soap until soap is dispensed (runs every 1s)
@@ -453,6 +458,7 @@ class CollectLoginScreen(MyScreen):
     def __init__(self, **kwargs):
         super(CollectLoginScreen, self).__init__(**kwargs)
         self.fail=MyLabel(text='',font_size=25,pos_hint={'center_x':0.5,'center_y':0.65})
+        self.fail.color=(1,0,0,1)
         ul=MyLabel(text='Student ID',font_size=25,pos_hint={'center_x':0.3,'center_y':0.54})
         self.ut=TextInput(pos_hint={'center_x':0.7,'center_y':0.54},size_hint=(0.4,0.07),multiline=False,write_tab=False,on_text_validate=self.login)
         pl=MyLabel(text='Password',font_size=25,pos_hint={'center_x':0.3,'center_y':0.46})
@@ -473,7 +479,7 @@ class CollectLoginScreen(MyScreen):
         self.layout.add_widget(homeb)
         self.layout.add_widget(backb)
     def on_enter(self):
-        Clock.schedule_once(self.home,60)
+        Clock.schedule_once(self.home,2*60)
     def on_pre_leave(self):
         Clock.unschedule(self.home)
     def on_leave(self):
@@ -481,7 +487,7 @@ class CollectLoginScreen(MyScreen):
         self.pt.text=''
         self.fail.text=''
     def login(self,instance):
-        if verify(self.ut.text,self.pt.text):
+        if verify(self.ut.text,Hash(self.pt.text)):
             weight,machineid,endtime=getData(self.ut.text,['weight','machineid','endtime'])
             if weight==None:    #if wash info is empty
                 global globalState
@@ -643,7 +649,7 @@ class SignUpScreen(MyScreen):
             self.fail.text='Please key in your password'
             self.pt.focus=True
         else:
-            createUser(self.ut.text,self.pt.text,int(self.ct.text))    #creates the user on firebase
+            createUser(self.ut.text,Hash(self.pt.text),int(self.ct.text))    #creates the user on firebase
             timing,studentid=getState(globalMachine,['state','studentid'])
             weight=[globalWeight]
             machineid=[globalMachine]
