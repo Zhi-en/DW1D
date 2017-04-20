@@ -18,7 +18,7 @@ from Hash import Hash
 #import 1D functions
 from weigh import weighingScale
 from weigh import getCost
-from soap import Dispenser, ClearLEDs
+from soap import distance, dispense, clearLEDs
 from account import createUser, getUsers, verify, putData, getData
 from database import initMachines, clearMachines, putState, getState, getMachine, getDoor, getWash
 
@@ -408,6 +408,8 @@ class WashLoginScreen(MyScreen):
                 putState(globalMachine,door=1,state=time(),weight=globalWeight,studentid=studentid)
             else:    #if neither, keeps first user timing and updates rest of info accordingly
                 putState(globalMachine,door=1,weight=globalWeight,studentid=studentid)
+            global globalState
+            globalState=timing
             self.manager.current='wash'
         else:
             self.ut.text=''
@@ -427,30 +429,39 @@ class WashScreen(MyScreen):
         homeb=HomeButton(on_press=self.home)
         self.layout.add_widget(self.washl)
         self.layout.add_widget(homeb)
-        self.dispensed=False
+        self.preset=10
+        self.count=0
+        self.avelen=10
+        self.distls=[100 for i in range(self.avelen)]
     def on_pre_enter(self):
-        if globalState==-1:    #last user, dispense soap
+        if globalState==0:    #first user, dispense soap
             self.washl.text='Please place your laundry\nin Washing Machine %d and\nCollect soap from the dispenser' %(globalMachine)
         else:
             self.washl.text='Please place your laundry\nin Washing Machine %d' %(globalMachine)
     def on_enter(self):
-        if globalState==-1:
+        if globalState==0:
             Clock.schedule_once(self.home,60)
-            Clock.schedule_interval(self.dispense,1)
+            Clock.schedule_interval(self.dispense,0.1)
         else:
             Clock.schedule_once(self.home,30)
     def on_pre_leave(self):
         Clock.unschedule(self.home)
         Clock.unschedule(self.dispense)
-        ClearLEDs()
-        self.dispensed=False
+        clearLEDs()
     def on_leave(self):
         self.washl.text=''
+        self.dispensed=False
     def dispense(self,instance):    #tries to dispense soap until soap is dispensed (runs every 1s)
-        if not self.dispensed:
-            self.dispensed=Dispenser()
+        self.distls.append(distance())
+        self.distls=self.distls[1:]
+        if sum(self.distls)/self.avelen<self.preset:
+            self.count+=1
         else:
-            ClearLEDs()
+            self.count=0
+        if self.count==10:
+            dispense()
+            Clock.unschedule(self.dispense)
+            clearLEDs()
     def home(self,instance):
         self.manager.current='welcome'
 
@@ -724,5 +735,6 @@ if __name__== '__main__':
     try:
         SwitchScreenApp().run()
     except KeyboardInterrupt:
-        GPIO.cleanup()
+        pass
+GPIO.cleanup()
     

@@ -24,8 +24,7 @@ def getUsers():    #returns a list of userids
 
 def resetUsers(studentid = None):    #resets the attributes of users
     if studentid == None:    #if no user input, resets all users
-        for studentid in firebase.get('/Accounts/').keys():
-            putData(studentid, weight = 'clear', machineid = 'clear', endtime = 'clear', debt = 'clear')
+        studentid = getUsers()
     elif type(studentid) is not list:    #converts inputs to list if not list
         studentid = [studentid]
     for student in studentid:    #clears all users in list

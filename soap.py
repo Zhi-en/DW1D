@@ -35,40 +35,37 @@ def distance():
     StopTime = time.time()
  
     # save StartTime
+#    start=time.time()
     while GPIO.input(GPIO_ECHO) == 0:
         StartTime = time.time()
+#        if time.time()-start>0.01:
+#            StartTime = time.time()
+#            break
  
     # save time of arrival
+#    start=time.time()
     while GPIO.input(GPIO_ECHO) == 1:
         StopTime = time.time()
- 
+#        if time.time()-start>0.01:
+#            StopTime = StartTime + 0.005
+#            break
+
     # time difference between start and arrival
     TimeElapsed = StopTime - StartTime
     # multiply with the sonic speed (34300 cm/s)
     # and divide by 2, because there and back
     distance = (TimeElapsed * 34300) / 2
- 
     return distance
  
-def Dispenser():        #Distance = distance read from sonar, inp = dispense command
-    present = 10.0      #Fixed distance of cup
-    d = distance()
-    if d < present:
-        GPIO.output(GPIO_Red, GPIO.LOW)     #Red LED Turns off
-        pwm.start(99)     #complete revolutions at fixed speed for 3 secs
-        GPIO.output(GPIO_Green, GPIO.HIGH)
-#        print "Container Present, Dispensing"
-        time.sleep(3)
-        GPIO.output(GPIO_Green, GPIO.LOW)
-        pwm.stop()
-        return True
-    
-    else:
-        print "Container not present"
-        GPIO.output(GPIO_Red, GPIO.HIGH)       #Red LED lights up
-        return False
+def dispense():        #Distance = distance read from sonar, inp = dispense command
+    GPIO.output(GPIO_Red, GPIO.LOW)     #Red LED Turns off
+    pwm.start(99)     #complete revolutions at fixed speed for 3 secs
+    GPIO.output(GPIO_Green, GPIO.HIGH)
+    time.sleep(3)
+    GPIO.output(GPIO_Green, GPIO.LOW)
+    pwm.stop()
 
-def ClearLEDs():    #Cleans up the pins if exits prematurely
+def clearLEDs():    #Cleans up the pins if exits prematurely
     GPIO.output(GPIO_Red, GPIO.LOW)
     GPIO.output(GPIO_Green, GPIO.LOW)
     pwm.stop()

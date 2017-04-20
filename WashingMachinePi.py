@@ -61,4 +61,5 @@ try:
         except urllib2.HTTPError:
             continue    #prevents error when unable to retrieve info from firebase
 except KeyboardInterrupt:
-    GPIO.cleanup()
+    pass
+GPIO.cleanup()
