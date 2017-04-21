@@ -1,5 +1,6 @@
 #Ver 1.3: Gets time from an NTP server instead of time.time
 #Ver 1.31: Removed * from wash complete reply
+#Ver 1.32: Added try and except for crash prevention
 # Modules needed for running Telegram bot:
 import telepot
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
@@ -229,10 +230,13 @@ if __name__ == '__main__':
 
     bot.message_loop({'chat': replyCheck})
     print('Now listening...')
-    
+
     # Main loop
     while True:
-        print('Fetching updates...')
-        checkMachines()
-        time.sleep(10)
+        try:
+            print('Fetching updates...')
+            checkMachines()
+            time.sleep(10)
+        except:
+            print('Server busy...')
     
